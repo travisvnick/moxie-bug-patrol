@@ -8,8 +8,6 @@ export function createGame(parent: string): Phaser.Game {
     backgroundColor: '#87CEEB',
     scale: {
       mode: Phaser.Scale.RESIZE,
-      width: CANVAS_W,
-      height: CANVAS_H,
     },
     scene: [PaloVerdeLane],
     input: {
