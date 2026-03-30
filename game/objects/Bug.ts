@@ -7,6 +7,8 @@ export interface BugTypeData {
   color: number;
   bodyColor: number;
   description: string;
+  fact: string;
+  rarity: string;
   wanderSpeed: number;
   fleeSpeed: number;
   sizeMult: number;
@@ -18,6 +20,8 @@ export const BUG_TYPES: BugTypeData[] = [
     color: 0x8B5E3C,
     bodyColor: 0x5C3317,
     description: 'A cool cockroach who thinks he runs this whole block.',
+    fact: 'Cockroaches can hold their breath for 40 minutes!',
+    rarity: 'Common',
     wanderSpeed: 0.8,
     fleeSpeed: 2.5,
     sizeMult: 1.0,
@@ -27,6 +31,8 @@ export const BUG_TYPES: BugTypeData[] = [
     color: 0xD4B896,
     bodyColor: 0xB8956A,
     description: 'A bark scorpion who scurries at full speed everywhere.',
+    fact: 'Bark scorpions glow blue under UV light!',
+    rarity: 'Rare',
     wanderSpeed: 1.8,
     fleeSpeed: 3.5,
     sizeMult: 1.0,
@@ -36,6 +42,8 @@ export const BUG_TYPES: BugTypeData[] = [
     color: 0x1A1A2E,
     bodyColor: 0x16213E,
     description: 'A giant palo verde beetle with iridescent wings.',
+    fact: 'Palo verde beetles grow up to 4 inches!',
+    rarity: 'Epic',
     wanderSpeed: 1.0,
     fleeSpeed: 2.0,
     sizeMult: 1.3,
@@ -45,6 +53,8 @@ export const BUG_TYPES: BugTypeData[] = [
     color: 0xFF69B4,
     bodyColor: 0x39FF14,
     description: 'A neon moth whose wings pulse with vivid color.',
+    fact: 'Some moths navigate by moonlight!',
+    rarity: 'Uncommon',
     wanderSpeed: 1.4,
     fleeSpeed: 3.0,
     sizeMult: 1.1,
@@ -54,6 +64,8 @@ export const BUG_TYPES: BugTypeData[] = [
     color: 0xCC2200,
     bodyColor: 0xFF3300,
     description: 'A tiny ant who always carries something bigger than himself.',
+    fact: 'Harvester ants carry 50x their weight!',
+    rarity: 'Common',
     wanderSpeed: 1.0,
     fleeSpeed: 2.2,
     sizeMult: 0.6,
@@ -64,7 +76,7 @@ const FLEE_RADIUS = 3.2;
 const SETTLE_RADIUS = 5.0;
 const MIN_GRID = 0.5;
 const MAX_GRID = GRID_SIZE - 1.5;
-const PROXIMITY_NAME_RADIUS = 2.5; // grid units — show name label when player this close
+const PROXIMITY_NAME_RADIUS = 2.5;
 
 export class Bug {
   private gfx: Phaser.GameObjects.Graphics;
@@ -74,6 +86,7 @@ export class Bug {
   gy: number;
   state: BugState = BugState.WANDER;
   caught = false;
+  hidden = true;
 
   private boostActive = false;
   private boostTimer = 0;
@@ -110,6 +123,14 @@ export class Bug {
     this.redraw();
   }
 
+  /** Make the bug visible — called when player triggers the spawn point. */
+  reveal() {
+    this.hidden = false;
+    // Immediately pick a wander target so bug moves right away
+    this.wanderDelay = 300;
+    this.wanderTimer = 300;
+  }
+
   /** Temporarily boost flee speed (called on catch miss). */
   boostFlee() {
     this.boostActive = true;
@@ -118,7 +139,7 @@ export class Bug {
   }
 
   update(delta: number, playerGx: number, playerGy: number) {
-    if (this.caught) {
+    if (this.caught || this.hidden) {
       if (this.nameLabel) this.nameLabel.setAlpha(0);
       return;
     }
@@ -183,6 +204,11 @@ export class Bug {
   }
 
   private redraw() {
+    if (this.hidden) {
+      this.gfx.clear();
+      return;
+    }
+
     const { x, y } = gridToScreen(this.gx, this.gy);
     const depth = this.gx + this.gy + 0.3;
     const wo = Math.sin(this.wiggle) * 1.5;
@@ -216,19 +242,16 @@ export class Bug {
     g.fillStyle(0x6B3A1F);
     g.fillCircle(x + wo, y - 15 * s, 4.5 * s);
 
-    // Sunglasses
     g.fillStyle(0x111111);
     g.fillRoundedRect(x + wo - 5.5 * s, y - 17.5 * s, 4 * s, 2.5 * s, 1);
     g.fillRoundedRect(x + wo + 1.5 * s, y - 17.5 * s, 4 * s, 2.5 * s, 1);
     g.lineStyle(0.8, 0x444444, 0.9);
     g.lineBetween(x + wo - 1.5 * s, y - 16.5 * s, x + wo + 1.5 * s, y - 16.5 * s);
 
-    // Antennae
     g.lineStyle(1, 0x5C3317, 0.9);
     g.lineBetween(x + wo - 1.5 * s, y - 19 * s, x + wo - 6 * s, y - 26 * s);
     g.lineBetween(x + wo + 1.5 * s, y - 19 * s, x + wo + 6 * s, y - 26 * s);
 
-    // Legs (3 pairs)
     g.lineStyle(1, 0x5C3317, 0.7);
     for (let i = -1; i <= 1; i++) {
       const ly = y - 8 * s + i * 3 * s;
@@ -243,16 +266,13 @@ export class Bug {
     g.fillStyle(0x000000, 0.10);
     g.fillEllipse(x + wo, y, 24 * s, 7 * s);
 
-    // Body segments
     g.fillStyle(0xD4B896);
     g.fillEllipse(x + wo, y - 6 * s, 11 * s, 8 * s);
     g.fillStyle(0xC8A882);
     g.fillEllipse(x + wo, y - 11 * s, 9 * s, 7 * s);
-    // Head
     g.fillStyle(0xB8956A);
     g.fillEllipse(x + wo, y - 16 * s, 8 * s, 6 * s);
 
-    // Curled tail segments
     const tailSegs = [
       { dx: 6,  dy: -4  },
       { dx: 10, dy: -8  },
@@ -272,18 +292,15 @@ export class Bug {
       g.lineBetween(prevTx, prevTy, tx, ty);
       prevTx = tx; prevTy = ty;
     }
-    // Stinger
     g.fillStyle(0x8B6040);
     g.fillCircle(x + wo + 7 * s, y - 23 * s, 2 * s);
 
-    // Pincers
     g.lineStyle(1.5, 0xB8956A);
     g.lineBetween(x + wo - 3 * s, y - 18 * s, x + wo - 9 * s, y - 22 * s);
     g.strokeCircle(x + wo - 10 * s, y - 23 * s, 2.5 * s);
     g.lineBetween(x + wo + 3 * s, y - 18 * s, x + wo + 9 * s, y - 22 * s);
     g.strokeCircle(x + wo + 10 * s, y - 23 * s, 2.5 * s);
 
-    // Legs (4 pairs for scorpion)
     g.lineStyle(1, 0xB8956A, 0.7);
     for (let i = 0; i < 2; i++) {
       const ly = y - 6 * s + i * 4 * s;
@@ -295,40 +312,33 @@ export class Bug {
   /** DJ Beetle — big dark palo verde beetle with iridescent shimmer */
   private drawDJBeetle(x: number, y: number, wo: number, s: number) {
     const g = this.gfx;
-    const shimmer = Math.sin(this.wiggle * 2) * 0.5 + 0.5; // 0–1
+    const shimmer = Math.sin(this.wiggle * 2) * 0.5 + 0.5;
 
     g.fillStyle(0x000000, 0.15);
     g.fillEllipse(x + wo, y, 22 * s, 8 * s);
 
-    // Body
     g.fillStyle(0x1A1A2E);
     g.fillEllipse(x + wo, y - 8 * s, 16 * s, 13 * s);
 
-    // Iridescent sheen (left and right wing halves)
     const shColor = shimmer > 0.5 ? 0x00CC88 : 0x0088CC;
     g.lineStyle(1.5, shColor, 0.45 + shimmer * 0.35);
     g.strokeEllipse(x + wo - 3 * s, y - 8 * s, 8 * s, 11 * s);
     g.lineStyle(1.5, shColor, 0.35 + shimmer * 0.35);
     g.strokeEllipse(x + wo + 3 * s, y - 8 * s, 8 * s, 11 * s);
-    // Center sheen line
     g.lineStyle(1, 0x005566, 0.5 + shimmer * 0.3);
     g.lineBetween(x + wo, y - 2 * s, x + wo, y - 14 * s);
 
-    // Head
     g.fillStyle(0x16213E);
     g.fillCircle(x + wo, y - 15 * s, 5 * s);
 
-    // Mandibles
     g.lineStyle(1.5, 0x2A2A50);
     g.lineBetween(x + wo - 2 * s, y - 19 * s, x + wo - 6 * s, y - 23 * s);
     g.lineBetween(x + wo + 2 * s, y - 19 * s, x + wo + 6 * s, y - 23 * s);
 
-    // Very long antennae (palo verde beetle hallmark)
     g.lineStyle(1, 0x2A2A50, 0.85);
     g.lineBetween(x + wo - 2 * s, y - 20 * s, x + wo - 18 * s, y - 44 * s);
     g.lineBetween(x + wo + 2 * s, y - 20 * s, x + wo + 18 * s, y - 44 * s);
 
-    // Legs
     g.lineStyle(1, 0x2A2A50, 0.7);
     for (let i = -1; i <= 1; i++) {
       const ly = y - 8 * s + i * 3.5 * s;
@@ -347,7 +357,6 @@ export class Bug {
     g.fillStyle(0x000000, 0.10);
     g.fillEllipse(x + wo, y, 30 * s, 7 * s);
 
-    // Wings — two upper triangles + two lower
     g.fillStyle(wingColor, wingAlpha);
     g.fillTriangle(
       x + wo - 2 * s, y - 12 * s,
@@ -370,7 +379,6 @@ export class Bug {
       x + wo + 9 * s, y + 3 * s
     );
 
-    // Wing outline glow
     const glowColor = pulse > 0 ? 0xFF1493 : 0x00FF44;
     g.lineStyle(1, glowColor, 0.55);
     g.strokeTriangle(
@@ -384,11 +392,9 @@ export class Bug {
       x + wo + 14 * s, y - 5 * s
     );
 
-    // Fuzzy body
     g.fillStyle(0x330033);
     g.fillEllipse(x + wo, y - 10 * s, 5 * s, 14 * s);
 
-    // Antennae with ball tips
     g.lineStyle(1, 0xFF69B4, 0.8);
     g.lineBetween(x + wo - 1 * s, y - 16 * s, x + wo - 7 * s, y - 26 * s);
     g.fillStyle(0xFF69B4);
@@ -405,24 +411,19 @@ export class Bug {
     g.fillStyle(0x000000, 0.10);
     g.fillEllipse(x + wo, y, 10 * s, 4 * s);
 
-    // Abdomen (rear, largest)
     g.fillStyle(0xCC2200);
     g.fillCircle(x + wo, y - 4.5 * s, 4 * s);
-    // Thorax
     g.fillStyle(0xFF3300);
     g.fillCircle(x + wo, y - 10 * s, 3 * s);
-    // Head
     g.fillStyle(0xCC2200);
     g.fillCircle(x + wo, y - 15 * s, 2.8 * s);
 
-    // Elbowed antennae
     g.lineStyle(0.8, 0xAA1A00, 0.9);
     g.lineBetween(x + wo - 1 * s, y - 17 * s, x + wo - 4 * s, y - 20 * s);
     g.lineBetween(x + wo - 4 * s, y - 20 * s, x + wo - 2 * s, y - 23 * s);
     g.lineBetween(x + wo + 1 * s, y - 17 * s, x + wo + 4 * s, y - 20 * s);
     g.lineBetween(x + wo + 4 * s, y - 20 * s, x + wo + 2 * s, y - 23 * s);
 
-    // Legs (3 pairs from thorax, elbowed)
     g.lineStyle(0.8, 0xAA1A00, 0.7);
     for (let i = -1; i <= 1; i++) {
       const ly = y - 10 * s + i * 2.5 * s;
@@ -432,7 +433,6 @@ export class Bug {
       g.lineBetween(x + wo + 5 * s, ly - 1 * s, x + wo + 8 * s, ly + 2 * s);
     }
 
-    // Tiny carried object (white dot above thorax)
     g.fillStyle(0xFFFFFF, 0.9);
     g.fillCircle(x + wo, y - 9 * s, 2.5 * s);
     g.lineStyle(0.6, 0xCCCCCC, 0.7);

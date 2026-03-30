@@ -5,23 +5,84 @@ import {
   gridToScreen, screenToGrid,
   TILE_HW, TILE_HH,
   GRID_SIZE,
-  CANVAS_W, CANVAS_H,
-  COL_SAND, COL_SAND_DARK,
   COL_TERRACOTTA, COL_SAGE, COL_MOXIE,
   COL_STUCCO, COL_CACTUS,
 } from '../constants';
-import { emitBugCaught } from '../eventBus';
+import { emitShowCatchCard, onCatchCardDismissed } from '../eventBus';
 
-const CATCH_RADIUS = 1.6;      // grid units
+const CATCH_RADIUS = 1.6;
 const RING_MIN = 8;
 const RING_MAX = 44;
-const RING_SPEED = 60;         // px/sec
-const CATCH_WINDOW_MAX = 22;   // px — ring within this = green zone
-const BUG_TAP_RADIUS = 24;    // world pixels — how close a tap must be to a bug
+const RING_SPEED = 60;
+const CATCH_WINDOW_MAX = 22;
+const BUG_TAP_RADIUS = 24;
+const SPAWN_REVEAL_RADIUS = 1.5;
 
-// Per-tile sand color variants for subtle ground variation
 const SAND_LIGHT = [0xE8C99A, 0xEBCFA0, 0xE4C496, 0xEDD6A8, 0xE6CB97];
 const SAND_DARK  = [0xD4A76A, 0xD8AB70, 0xCFA265, 0xD6A96C, 0xD0A468];
+
+type ScreenId = 'cul-de-sac' | 'back-alley' | 'the-park' | 'moxie-hq';
+
+interface SpawnPointDef {
+  gx: number;
+  gy: number;
+  bugType: number;
+}
+
+interface RuntimeSpawnPoint extends SpawnPointDef {
+  triggered: boolean;
+  bug: Bug | null;
+}
+
+interface ScreenDef {
+  id: ScreenId;
+  name: string;
+  connections: { east?: ScreenId; west?: ScreenId; north?: ScreenId; south?: ScreenId };
+  spawnPoints: SpawnPointDef[];
+}
+
+const SCREENS: Record<ScreenId, ScreenDef> = {
+  'cul-de-sac': {
+    id: 'cul-de-sac',
+    name: 'The Cul-de-sac',
+    connections: { east: 'back-alley', south: 'the-park' },
+    spawnPoints: [
+      { gx: 6, gy: 9, bugType: 0 },
+      { gx: 3, gy: 4, bugType: 4 },
+      { gx: 10, gy: 6, bugType: 2 },
+    ],
+  },
+  'back-alley': {
+    id: 'back-alley',
+    name: 'Back Alley',
+    connections: { west: 'cul-de-sac', south: 'moxie-hq' },
+    spawnPoints: [
+      { gx: 4, gy: 5, bugType: 1 },
+      { gx: 9, gy: 9, bugType: 3 },
+      { gx: 7, gy: 2, bugType: 0 },
+    ],
+  },
+  'the-park': {
+    id: 'the-park',
+    name: 'The Park',
+    connections: { north: 'cul-de-sac', east: 'moxie-hq' },
+    spawnPoints: [
+      { gx: 4, gy: 6, bugType: 3 },
+      { gx: 9, gy: 4, bugType: 4 },
+      { gx: 7, gy: 11, bugType: 1 },
+    ],
+  },
+  'moxie-hq': {
+    id: 'moxie-hq',
+    name: 'Moxie HQ',
+    connections: { north: 'back-alley', west: 'the-park' },
+    spawnPoints: [
+      { gx: 5, gy: 7, bugType: 2 },
+      { gx: 10, gy: 4, bugType: 0 },
+      { gx: 3, gy: 11, bugType: 4 },
+    ],
+  },
+};
 
 type KeySet = Phaser.Types.Input.Keyboard.CursorKeys & {
   w: Phaser.Input.Keyboard.Key;
@@ -36,7 +97,6 @@ export class PaloVerdeLane extends Phaser.Scene {
   private bugs: Bug[] = [];
   private keys!: KeySet;
 
-  // Mobile scaling
   private zoom = 1;
 
   // Catch mini-game
@@ -55,6 +115,14 @@ export class PaloVerdeLane extends Phaser.Scene {
   private heldWorldX = 0;
   private heldWorldY = 0;
 
+  // Multi-screen
+  private currentScreenId: ScreenId = 'cul-de-sac';
+  private envObjects: Phaser.GameObjects.GameObject[] = [];
+  private spawnPoints: RuntimeSpawnPoint[] = [];
+  private transitioning = false;
+  private paused = false;
+  private catchCardUnsubscribe: (() => void) | null = null;
+
   constructor() {
     super({ key: 'PaloVerdeLane' });
   }
@@ -62,30 +130,16 @@ export class PaloVerdeLane extends Phaser.Scene {
   // ─── Lifecycle ────────────────────────────────────────────────────────────
 
   create() {
-    // Sky: warm Arizona sunset gradient (deep blue → orange)
-    // Rect is 8000×8000 centered on the map so edges never show when camera follows player
+    // Sky: warm Arizona sunset gradient
     const sky = this.add.graphics().setDepth(-2);
     sky.fillGradientStyle(0x0D1B4A, 0x0D1B4A, 0xE8604A, 0xE8604A);
     sky.fillRect(-3200, -3200, 8000, 3840);
-    // Warm golden horizon — extends generously below and to all sides
     sky.fillStyle(0xFFB347);
     sky.fillRect(-3200, 405, 8000, 4400);
 
     this.drawGround();
-    this.drawEnvironment();
 
     this.player = new Player(this, 7, 7);
-
-    const bugSpots: [number, number, number][] = [
-      [3, 4, 0],
-      [11, 5, 1],
-      [4, 11, 2],
-      [10, 11, 3],
-      [7, 2, 4],
-    ];
-    for (const [gx, gy, type] of bugSpots) {
-      this.bugs.push(new Bug(this, gx, gy, type));
-    }
 
     // Keyboard input
     if (this.input.keyboard) {
@@ -98,7 +152,6 @@ export class PaloVerdeLane extends Phaser.Scene {
       });
     }
 
-    // Mobile zoom: wider view on small screens
     if (this.scale.width < 800) {
       this.cameras.main.setZoom(1.3);
     }
@@ -159,36 +212,55 @@ export class PaloVerdeLane extends Phaser.Scene {
       this.player.stopMove();
     });
 
+    // Listen for catch card dismiss from React
+    this.catchCardUnsubscribe = onCatchCardDismissed(() => {
+      this.paused = false;
+      this.catchTarget = null;
+      this.ringRadius = RING_MIN;
+      this.ringDir = 1;
+    });
+
+    this.events.on('shutdown', () => {
+      if (this.catchCardUnsubscribe) this.catchCardUnsubscribe();
+    });
+
+    // Load first screen (no fade on initial load)
+    this.loadScreen('cul-de-sac', 7, 7, false);
+
     // Center camera on player start
     const startPos = gridToScreen(7, 7);
     this.cameras.main.centerOn(startPos.x, startPos.y);
   }
 
   update(_time: number, delta: number) {
-    // Keyboard movement (returns true if keys were held)
+    if (this.transitioning || this.paused) return;
+
     const keyboardMoved = this.handleKeyboard(delta);
 
-    // Hold-to-move: keep updating target while pointer is held
     if (this.pointerHeld && !this.catchTarget && !keyboardMoved) {
       const { gx, gy } = screenToGrid(this.heldWorldX, this.heldWorldY);
       this.player.moveTo(gx, gy);
     }
 
-    // Execute tap/hold movement
     const tapMoved = this.player.updateMove(delta);
 
-    // Signal idle when no movement input
     if (!keyboardMoved && !tapMoved) {
       this.player.setIdle();
     }
+
+    // Apply soft walls for edges without connections
+    const screen = SCREENS[this.currentScreenId];
+    if (!screen.connections.east)  this.player.gx = Math.min(this.player.gx, 12.7);
+    if (!screen.connections.west)  this.player.gx = Math.max(this.player.gx, 0.3);
+    if (!screen.connections.south) this.player.gy = Math.min(this.player.gy, 12.7);
+    if (!screen.connections.north) this.player.gy = Math.max(this.player.gy, 0.3);
 
     // Bug AI
     for (const bug of this.bugs) {
       if (!bug.caught) bug.update(delta, this.player.gx, this.player.gy);
     }
 
-    // Camera hard-locked to player — player always dead center.
-    // Divide by zoom so the offset is in world units, not screen pixels.
+    // Camera hard-locked to player
     const { x: px, y: py } = this.player.getScreenPos();
     const cam = this.cameras.main;
     cam.scrollX = px - (cam.width / 2) / cam.zoom;
@@ -196,6 +268,12 @@ export class PaloVerdeLane extends Phaser.Scene {
 
     // Catch mini-game
     this.updateCatchGame(delta);
+
+    // Spawn point proximity check
+    this.checkSpawnPoints();
+
+    // Edge transition check
+    this.checkEdgeTransition();
 
     // SPACE key catch attempt
     if (this.keys?.space && Phaser.Input.Keyboard.JustDown(this.keys.space)) {
@@ -218,22 +296,22 @@ export class PaloVerdeLane extends Phaser.Scene {
     if (sdx !== 0 || sdy !== 0) {
       const len = Math.hypot(sdx, sdy);
       this.player.move(sdx / len, sdy / len, delta);
-      this.player.stopMove(); // keyboard overrides tap/hold-to-move
+      this.player.stopMove();
       return true;
     }
     return false;
   }
 
   private handlePointerDown(ptr: Phaser.Input.Pointer) {
-    // If catch game is active, any tap times the catch
+    if (this.paused || this.transitioning) return;
+
     if (this.catchTarget) {
       this.attemptCatch();
       return;
     }
 
-    // Tap near a bug that's within catch range → attempt catch
     for (const bug of this.bugs) {
-      if (bug.caught) continue;
+      if (bug.caught || bug.hidden) continue;
       const distToPlayer = Math.hypot(bug.gx - this.player.gx, bug.gy - this.player.gy);
       if (distToPlayer < CATCH_RADIUS) {
         const { x: bx, y: by } = bug.getScreenPos();
@@ -244,7 +322,6 @@ export class PaloVerdeLane extends Phaser.Scene {
       }
     }
 
-    // Otherwise: start hold-to-move toward tapped position
     const { gx, gy } = screenToGrid(ptr.worldX, ptr.worldY);
     this.player.moveTo(gx, gy);
     this.pointerHeld = true;
@@ -259,7 +336,7 @@ export class PaloVerdeLane extends Phaser.Scene {
     let nearestDist = Infinity;
 
     for (const bug of this.bugs) {
-      if (bug.caught) continue;
+      if (bug.caught || bug.hidden) continue;
       const dx = bug.gx - this.player.gx;
       const dy = bug.gy - this.player.gy;
       const d = Math.hypot(dx, dy);
@@ -272,7 +349,6 @@ export class PaloVerdeLane extends Phaser.Scene {
     this.catchTarget = nearest;
 
     if (nearest) {
-      // Animate ring
       this.ringRadius += this.ringDir * RING_SPEED * (delta / 1000);
       if (this.ringRadius >= RING_MAX) { this.ringRadius = RING_MAX; this.ringDir = -1; }
       if (this.ringRadius <= RING_MIN) { this.ringRadius = RING_MIN; this.ringDir = 1; }
@@ -283,19 +359,15 @@ export class PaloVerdeLane extends Phaser.Scene {
 
       this.catchRing.clear();
 
-      // Sweet spot fill — brighter when ring is inside
       this.catchRing.fillStyle(0x00FF88, inWindow ? 0.22 : 0.08);
       this.catchRing.fillCircle(x, oy, CATCH_WINDOW_MAX);
 
-      // Sweet spot ring outline
       this.catchRing.lineStyle(2, 0x00FF88, 0.85);
       this.catchRing.strokeCircle(x, oy, CATCH_WINDOW_MAX);
 
-      // Main animated ring — thick and bright
       this.catchRing.lineStyle(5, inWindow ? 0x00FF88 : 0xFFAA00, 0.95);
       this.catchRing.strokeCircle(x, oy, this.ringRadius);
 
-      // Soft outer glow
       this.catchRing.lineStyle(2, inWindow ? 0x88FFBB : 0xFFCC55, 0.35);
       this.catchRing.strokeCircle(x, oy, this.ringRadius + 4);
 
@@ -331,7 +403,7 @@ export class PaloVerdeLane extends Phaser.Scene {
       duration: 400, ease: 'Power2', onComplete: () => flash.destroy(),
     });
 
-    // Sparkle burst (8 colored rays)
+    // Sparkle burst
     const sparkle = this.add.graphics().setDepth(302);
     const rayColors = [0xFFD700, 0xFF69B4, 0x00FF88, 0x87CEEB, 0xFFD700, 0xFF69B4, 0x00FF88, 0x87CEEB];
     for (let i = 0; i < 8; i++) {
@@ -347,28 +419,20 @@ export class PaloVerdeLane extends Phaser.Scene {
       duration: 550, ease: 'Power2', onComplete: () => sparkle.destroy(),
     });
 
-    // "Caught!" label with bug name
-    const label = this.add.text(x, y - 40, `Caught!\n${bug.typeData.name}`, {
-      fontSize: '18px', fontStyle: 'bold',
-      color: '#FFD700',
-      stroke: '#1A3A2A',
-      strokeThickness: 3,
-      align: 'center',
-      padding: { x: 8, y: 4 },
-    }).setOrigin(0.5).setDepth(301);
-    this.tweens.add({
-      targets: label, y: y - 110, alpha: 0,
-      duration: 1600, ease: 'Power2',
-      onComplete: () => label.destroy(),
-    });
-
     bug.destroy();
 
-    emitBugCaught({
+    // Pause game and show catch card
+    this.paused = true;
+    this.catchRing.clear();
+    this.promptText.setAlpha(0);
+
+    emitShowCatchCard({
       id: bug.id,
       name: bug.typeData.name,
       color: bug.typeData.color,
       description: bug.typeData.description,
+      fact: bug.typeData.fact,
+      rarity: bug.typeData.rarity,
       caughtAt: Date.now(),
     });
 
@@ -378,7 +442,6 @@ export class PaloVerdeLane extends Phaser.Scene {
   }
 
   private flashMiss() {
-    // Boost the bug — it runs away faster after a miss
     if (this.catchTarget) {
       this.catchTarget.boostFlee();
     }
@@ -395,7 +458,153 @@ export class PaloVerdeLane extends Phaser.Scene {
     });
   }
 
-  // ─── Environment drawing helpers ──────────────────────────────────────────
+  // ─── Spawn Points ─────────────────────────────────────────────────────────
+
+  private checkSpawnPoints() {
+    for (const sp of this.spawnPoints) {
+      if (sp.triggered) continue;
+      const dist = Math.hypot(this.player.gx - sp.gx, this.player.gy - sp.gy);
+      if (dist < SPAWN_REVEAL_RADIUS) {
+        this.triggerSpawnPoint(sp);
+      }
+    }
+  }
+
+  private triggerSpawnPoint(sp: RuntimeSpawnPoint) {
+    sp.triggered = true;
+    const { x, y } = gridToScreen(sp.gx, sp.gy);
+
+    // "!" popup
+    const exclaim = this.add.text(x, y - 30, '!', {
+      fontSize: '36px', fontStyle: 'bold',
+      color: '#FF4400', stroke: '#000000', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(250);
+    this.tweens.add({
+      targets: exclaim, y: y - 62, alpha: 0, duration: 750, ease: 'Back.easeOut',
+      onComplete: () => exclaim.destroy(),
+    });
+
+    // Dust cloud
+    const dust = this.add.graphics().setDepth(249);
+    dust.fillStyle(0xD4B896, 0.65);
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      const r = 7 + Math.random() * 7;
+      dust.fillCircle(x + Math.cos(angle) * 14, y - 8 + Math.sin(angle) * 9, r);
+    }
+    this.tweens.add({
+      targets: dust, alpha: 0, scaleX: 2.2, scaleY: 2.2, duration: 600,
+      onComplete: () => dust.destroy(),
+    });
+
+    // Create and reveal bug
+    const bug = new Bug(this, sp.gx, sp.gy, sp.bugType);
+    bug.reveal();
+    sp.bug = bug;
+    this.bugs.push(bug);
+  }
+
+  // ─── Screen Management ────────────────────────────────────────────────────
+
+  private checkEdgeTransition() {
+    const screen = SCREENS[this.currentScreenId];
+    let targetId: ScreenId | undefined;
+    let newGx = this.player.gx;
+    let newGy = this.player.gy;
+
+    if (this.player.gx > 13.5 && screen.connections.east) {
+      targetId = screen.connections.east;
+      newGx = 0.5;
+    } else if (this.player.gx < 0.5 && screen.connections.west) {
+      targetId = screen.connections.west;
+      newGx = 13.5;
+    } else if (this.player.gy > 13.5 && screen.connections.south) {
+      targetId = screen.connections.south;
+      newGy = 0.5;
+    } else if (this.player.gy < 0.5 && screen.connections.north) {
+      targetId = screen.connections.north;
+      newGy = 13.5;
+    }
+
+    if (targetId) {
+      this.transitioning = true;
+      this.pointerHeld = false;
+      this.player.stopMove();
+      const finalGx = newGx;
+      const finalGy = newGy;
+      const finalId = targetId;
+      this.cameras.main.fadeOut(300, 0, 0, 0);
+      this.cameras.main.once('camerafadeoutcomplete', () => {
+        this.loadScreen(finalId, finalGx, finalGy, true);
+        this.cameras.main.fadeIn(300, 0, 0, 0);
+        this.cameras.main.once('camerafadeincomplete', () => {
+          this.transitioning = false;
+        });
+      });
+    }
+  }
+
+  private loadScreen(screenId: ScreenId, playerGx: number, playerGy: number, showLabel: boolean) {
+    // Destroy current environment
+    for (const obj of this.envObjects) obj.destroy();
+    this.envObjects = [];
+
+    // Destroy all bugs
+    for (const bug of this.bugs) bug.destroy();
+    this.bugs = [];
+
+    // Clear catch state
+    this.catchTarget = null;
+    if (this.catchRing) this.catchRing.clear();
+    if (this.promptText) this.promptText.setAlpha(0);
+
+    this.currentScreenId = screenId;
+    this.player.gx = playerGx;
+    this.player.gy = playerGy;
+
+    // Draw environment for this screen
+    this.drawScreenEnvironment(screenId);
+
+    // Init spawn points (all untriggered, no bugs yet)
+    const screen = SCREENS[screenId];
+    this.spawnPoints = screen.spawnPoints.map(sp => ({ ...sp, triggered: false, bug: null }));
+
+    // Show screen name label on transition
+    if (showLabel) {
+      const sw = this.scale.width / this.zoom;
+      const sh = this.scale.height / this.zoom;
+      const label = this.add.text(sw / 2, sh * 0.18, screen.name, {
+        fontSize: `${Math.round(26 / this.zoom)}px`,
+        fontStyle: 'bold',
+        color: '#ffffff',
+        backgroundColor: '#00000099',
+        padding: { x: 20, y: 10 },
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(300);
+      this.tweens.add({
+        targets: label, alpha: 0, delay: 1800, duration: 600,
+        onComplete: () => label.destroy(),
+      });
+    }
+  }
+
+  // ─── Environment helpers ──────────────────────────────────────────────────
+
+  private addEnvGraphics(): Phaser.GameObjects.Graphics {
+    const g = this.add.graphics();
+    this.envObjects.push(g);
+    return g;
+  }
+
+  private drawScreenEnvironment(screenId: ScreenId) {
+    switch (screenId) {
+      case 'cul-de-sac': this.drawCulDeSac(); break;
+      case 'back-alley':  this.drawBackAlley(); break;
+      case 'the-park':    this.drawThePark(); break;
+      case 'moxie-hq':    this.drawMoxieHQ(); break;
+    }
+  }
+
+  // ─── Ground (permanent, drawn once) ──────────────────────────────────────
 
   private drawGround() {
     const g = this.add.graphics().setDepth(-1);
@@ -404,8 +613,6 @@ export class PaloVerdeLane extends Phaser.Scene {
       for (let gy = 0; gy < GRID_SIZE; gy++) {
         const { x, y } = gridToScreen(gx, gy);
         const alt = (gx + gy) % 2 === 0;
-
-        // Subtle per-tile color variation using position hash
         const hash = (gx * 7 + gy * 13 + gx * gy * 3) % 5;
         const tileColor = alt ? SAND_LIGHT[hash] : SAND_DARK[hash];
 
@@ -418,7 +625,6 @@ export class PaloVerdeLane extends Phaser.Scene {
         g.closePath();
         g.fillPath();
 
-        // Subtle grid line
         g.lineStyle(1, 0xC4A876, 0.20);
         g.beginPath();
         g.moveTo(x,            y - TILE_HH);
@@ -431,28 +637,59 @@ export class PaloVerdeLane extends Phaser.Scene {
     }
   }
 
-  private drawEnvironment() {
-    // Houses
+  // ─── Per-screen environment layouts ──────────────────────────────────────
+
+  private drawCulDeSac() {
     this.drawHouse(0, 0);
-    this.drawHouse(11, 1);
-    this.drawHouse(12, 10);
-
-    // Palo verde trees
-    this.drawPaloVerde(3, 2);
-    this.drawPaloVerde(8, 2);
-    this.drawPaloVerde(10, 7);
+    this.drawHouse(10, 2);
+    this.drawPaloVerde(3, 3);
+    this.drawPaloVerde(8, 1);
     this.drawPaloVerde(2, 10);
-    this.drawPaloVerde(13, 5);
-
-    // Saguaros
-    this.drawSaguaro(1, 7);
-    this.drawSaguaro(5, 13);
-    this.drawSaguaro(12, 3);
-    this.drawSaguaro(9, 12);
+    this.drawSaguaro(6, 8);
+    this.drawSaguaro(11, 11);
+    this.drawRock(5, 5);
+    this.drawRock(9, 9);
+    this.drawRock(1, 12);
   }
 
+  private drawBackAlley() {
+    this.drawBackWall(0, 2);
+    this.drawBackWall(9, 0);
+    this.drawDumpster(3, 5);
+    this.drawDumpster(8, 7);
+    this.drawRock(2, 3);
+    this.drawRock(6, 2);
+    this.drawRock(11, 9);
+    this.drawRock(5, 11);
+    this.drawPaloVerde(12, 4);
+    this.drawPaloVerde(1, 12);
+  }
+
+  private drawThePark() {
+    this.drawPaloVerde(2, 3);
+    this.drawPaloVerde(5, 2);
+    this.drawPaloVerde(10, 5);
+    this.drawPaloVerde(3, 11);
+    this.drawPaloVerde(11, 12);
+    this.drawBench(6, 7);
+    this.drawBench(10, 10);
+    this.drawPlayground(7, 4);
+    this.drawRock(1, 8);
+  }
+
+  private drawMoxieHQ() {
+    this.drawOfficeBuilding(0, 0);
+    this.drawMoxieTruck(9, 8);
+    this.drawPottedPlant(6, 6);
+    this.drawPottedPlant(8, 11);
+    this.drawSaguaro(12, 2);
+    this.drawRock(4, 12);
+  }
+
+  // ─── Drawing helpers ──────────────────────────────────────────────────────
+
   private drawHouse(gx: number, gy: number) {
-    const g = this.add.graphics().setDepth(gx + gy + 3);
+    const g = this.addEnvGraphics().setDepth(gx + gy + 3);
     const { x, y } = gridToScreen(gx, gy);
     const hw = TILE_HW;
     const wallH = 55;
@@ -510,8 +747,76 @@ export class PaloVerdeLane extends Phaser.Scene {
     g.fillPath();
   }
 
+  private drawBackWall(gx: number, gy: number) {
+    const g = this.addEnvGraphics().setDepth(gx + gy + 3);
+    const { x, y } = gridToScreen(gx, gy);
+    const hw = TILE_HW;
+    const wallH = 40;
+
+    // Plain gray back of house
+    g.fillStyle(0xB0B0A8);
+    g.beginPath();
+    g.moveTo(x - hw, y);
+    g.lineTo(x,       y + TILE_HH);
+    g.lineTo(x,       y + TILE_HH - wallH);
+    g.lineTo(x - hw, y - wallH);
+    g.closePath();
+    g.fillPath();
+
+    g.fillStyle(0xC8C8C0);
+    g.beginPath();
+    g.moveTo(x,       y + TILE_HH);
+    g.lineTo(x + hw,  y);
+    g.lineTo(x + hw,  y - wallH);
+    g.lineTo(x,       y + TILE_HH - wallH);
+    g.closePath();
+    g.fillPath();
+
+    // Small back window
+    g.fillStyle(0x87CEEB, 0.7);
+    g.fillRect(x + 8, y - wallH + 10, 12, 10);
+
+    // Flat roof
+    g.fillStyle(0x888880);
+    g.beginPath();
+    g.moveTo(x - hw, y - wallH);
+    g.lineTo(x,       y + TILE_HH - wallH);
+    g.lineTo(x + hw,  y - wallH);
+    g.lineTo(x,       y - wallH - 4);
+    g.closePath();
+    g.fillPath();
+  }
+
+  private drawDumpster(gx: number, gy: number) {
+    const g = this.addEnvGraphics().setDepth(gx + gy + 2);
+    const { x, y } = gridToScreen(gx, gy);
+    const w = 28;
+    const h = 30;
+
+    // Shadow
+    g.fillStyle(0x000000, 0.15);
+    g.fillEllipse(x, y + 2, w + 8, 10);
+
+    // Body (dark green metal)
+    g.fillStyle(0x2A5F3A);
+    g.fillRoundedRect(x - w / 2, y - h, w, h, 3);
+
+    // Lid
+    g.fillStyle(0x1A4A2A);
+    g.fillRoundedRect(x - w / 2 - 2, y - h - 5, w + 4, 8, 2);
+
+    // Lid handle
+    g.fillStyle(0x888888);
+    g.fillRect(x - 6, y - h - 7, 12, 3);
+
+    // Grime detail lines
+    g.lineStyle(1, 0x1A4A2A, 0.5);
+    g.lineBetween(x - w / 2 + 4, y - h + 5, x - w / 2 + 4, y - 2);
+    g.lineBetween(x + w / 2 - 4, y - h + 5, x + w / 2 - 4, y - 2);
+  }
+
   private drawPaloVerde(gx: number, gy: number) {
-    const g = this.add.graphics().setDepth(gx + gy + 2);
+    const g = this.addEnvGraphics().setDepth(gx + gy + 2);
     const { x, y } = gridToScreen(gx, gy);
 
     // Trunk
@@ -552,23 +857,20 @@ export class PaloVerdeLane extends Phaser.Scene {
   }
 
   private drawSaguaro(gx: number, gy: number) {
-    const g = this.add.graphics().setDepth(gx + gy + 2);
+    const g = this.addEnvGraphics().setDepth(gx + gy + 2);
     const { x, y } = gridToScreen(gx, gy);
 
-    // Ground shadow
     g.fillStyle(0x000000, 0.14);
     g.fillEllipse(x + 8, y + 2, 28, 10);
 
-    const drawCactusSegment = (cx: number, cy: number, w: number, h: number) => {
+    const drawSeg = (cx: number, cy: number, w: number, h: number) => {
       g.fillStyle(COL_CACTUS);
       g.fillRoundedRect(cx - w / 2, cy - h, w, h, w / 2);
-      // Ribs
       g.lineStyle(1, 0x3A6040, 0.4);
       for (let i = 1; i < 4; i++) {
         const ry = cy - h + (h / 4) * i;
         g.lineBetween(cx - w / 2 + 1, ry, cx + w / 2 - 1, ry);
       }
-      // Spines
       g.fillStyle(0xE8C99A);
       for (let i = 0; i < 3; i++) {
         g.fillCircle(cx - w / 2 + 2, cy - h + (h / 3) * (i + 0.5), 1.5);
@@ -576,24 +878,213 @@ export class PaloVerdeLane extends Phaser.Scene {
       }
     };
 
-    // Main trunk
-    drawCactusSegment(x, y, 14, 75);
+    drawSeg(x, y, 14, 75);
     g.fillStyle(COL_CACTUS);
     g.fillCircle(x, y - 75, 7);
 
-    // Left arm
-    drawCactusSegment(x - 20, y - 40, 10, 22);
-    drawCactusSegment(x - 20, y - 62, 10, 26);
+    drawSeg(x - 20, y - 40, 10, 22);
+    drawSeg(x - 20, y - 62, 10, 26);
     g.fillCircle(x - 20, y - 88, 6);
 
-    // Right arm
-    drawCactusSegment(x + 18, y - 35, 10, 18);
-    drawCactusSegment(x + 18, y - 53, 10, 22);
+    drawSeg(x + 18, y - 35, 10, 18);
+    drawSeg(x + 18, y - 53, 10, 22);
     g.fillCircle(x + 18, y - 75, 6);
 
-    // Connector arms
     g.fillStyle(COL_CACTUS);
     g.fillRoundedRect(x - 28, y - 42, 18, 8, 4);
     g.fillRoundedRect(x + 10, y - 37, 16, 8, 4);
+  }
+
+  private drawRock(gx: number, gy: number) {
+    const g = this.addEnvGraphics().setDepth(gx + gy + 1);
+    const { x, y } = gridToScreen(gx, gy);
+
+    g.fillStyle(0x000000, 0.12);
+    g.fillEllipse(x + 4, y + 2, 32, 10);
+
+    g.fillStyle(0xA0998A);
+    g.fillEllipse(x, y - 8, 26, 20);
+    g.fillStyle(0xB8B0A0);
+    g.fillEllipse(x - 4, y - 11, 18, 13);
+  }
+
+  private drawBench(gx: number, gy: number) {
+    const g = this.addEnvGraphics().setDepth(gx + gy + 2);
+    const { x, y } = gridToScreen(gx, gy);
+
+    // Seat
+    g.fillStyle(0x8B5E3C);
+    g.fillRect(x - 22, y - 14, 44, 6);
+    // Back rest
+    g.fillRect(x - 22, y - 26, 44, 5);
+    // Legs
+    g.fillRect(x - 18, y - 8, 5, 12);
+    g.fillRect(x + 13, y - 8, 5, 12);
+    // Armrests
+    g.fillStyle(0x6B4020);
+    g.fillRect(x - 24, y - 26, 5, 18);
+    g.fillRect(x + 19, y - 26, 5, 18);
+    // Ground shadow
+    g.fillStyle(0x000000, 0.10);
+    g.fillEllipse(x, y + 2, 40, 8);
+  }
+
+  private drawPlayground(gx: number, gy: number) {
+    const g = this.addEnvGraphics().setDepth(gx + gy + 2);
+    const { x, y } = gridToScreen(gx, gy);
+
+    // Slide frame poles
+    g.lineStyle(3, 0xE05020, 1.0);
+    g.lineBetween(x - 22, y - 44, x - 22, y);
+    g.lineBetween(x + 22, y - 44, x + 22, y);
+    g.lineBetween(x - 22, y - 44, x + 22, y - 44);
+
+    // Platform
+    g.fillStyle(0xE05020, 0.9);
+    g.fillRect(x - 22, y - 50, 44, 6);
+
+    // Slide ramp (yellow)
+    g.lineStyle(5, 0xFFD700, 0.9);
+    g.lineBetween(x + 22, y - 44, x + 46, y - 10);
+
+    // Swing frame
+    g.lineStyle(2, 0x888888, 0.8);
+    g.lineBetween(x - 40, y - 44, x - 40, y);
+    g.lineBetween(x - 20, y - 44, x - 20, y);
+    g.lineBetween(x - 40, y - 44, x - 20, y - 44);
+
+    // Swing chains + seat
+    g.lineStyle(1.5, 0x666666, 0.7);
+    g.lineBetween(x - 37, y - 44, x - 34, y - 24);
+    g.lineBetween(x - 23, y - 44, x - 26, y - 24);
+    g.fillStyle(0x8B5E3C);
+    g.fillRect(x - 35, y - 26, 10, 4);
+  }
+
+  private drawOfficeBuilding(gx: number, gy: number) {
+    const g = this.addEnvGraphics().setDepth(gx + gy + 5);
+    const { x, y } = gridToScreen(gx, gy);
+    const hw = TILE_HW * 2.2;
+    const wallH = 95;
+
+    // Left wall
+    g.fillStyle(0xD0D0D8);
+    g.beginPath();
+    g.moveTo(x - hw, y);
+    g.lineTo(x,       y + TILE_HH * 2);
+    g.lineTo(x,       y + TILE_HH * 2 - wallH);
+    g.lineTo(x - hw, y - wallH);
+    g.closePath();
+    g.fillPath();
+
+    // Front wall (glass facade)
+    g.fillStyle(0xC8E8F8);
+    g.beginPath();
+    g.moveTo(x,       y + TILE_HH * 2);
+    g.lineTo(x + hw,  y);
+    g.lineTo(x + hw,  y - wallH);
+    g.lineTo(x,       y + TILE_HH * 2 - wallH);
+    g.closePath();
+    g.fillPath();
+
+    // Window grid on front face
+    g.fillStyle(0x87CEEB, 0.65);
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        g.fillRect(x + 8 + col * 26, y - wallH + 12 + row * 24, 18, 16);
+      }
+    }
+
+    // Moxie green sign band
+    g.fillStyle(COL_MOXIE, 0.9);
+    g.fillRect(x + 6, y - wallH + wallH * 0.62, hw * 0.85, 14);
+
+    // Flat roof
+    g.fillStyle(0xA8A8B8);
+    g.beginPath();
+    g.moveTo(x - hw, y - wallH);
+    g.lineTo(x,       y + TILE_HH * 2 - wallH);
+    g.lineTo(x + hw,  y - wallH);
+    g.lineTo(x,       y - wallH - 6);
+    g.closePath();
+    g.fillPath();
+
+    // Entry door (double glass)
+    g.fillStyle(0x2D6A4F);
+    g.fillRect(x + 14, y + TILE_HH * 2 - wallH, 22, 38);
+    g.fillStyle(0xAADDCC, 0.5);
+    g.fillRect(x + 16, y + TILE_HH * 2 - wallH + 2, 8, 34);
+    g.fillRect(x + 26, y + TILE_HH * 2 - wallH + 2, 8, 34);
+  }
+
+  private drawMoxieTruck(gx: number, gy: number) {
+    const g = this.addEnvGraphics().setDepth(gx + gy + 2);
+    const { x, y } = gridToScreen(gx, gy);
+
+    // Shadow
+    g.fillStyle(0x000000, 0.15);
+    g.fillEllipse(x + 5, y + 2, 62, 12);
+
+    // Van body (Moxie green)
+    g.fillStyle(COL_MOXIE);
+    g.fillRoundedRect(x - 28, y - 32, 52, 28, 4);
+
+    // Cab
+    g.fillStyle(0x1A4A30);
+    g.fillRoundedRect(x + 14, y - 42, 20, 22, 3);
+
+    // Windshield
+    g.fillStyle(0x87CEEB, 0.8);
+    g.fillRoundedRect(x + 16, y - 40, 16, 14, 2);
+
+    // Side windows
+    g.fillStyle(0x87CEEB, 0.6);
+    g.fillRect(x - 22, y - 30, 14, 10);
+    g.fillRect(x - 4, y - 30, 14, 10);
+
+    // Wheels
+    g.fillStyle(0x333333);
+    g.fillCircle(x - 15, y + 1, 7);
+    g.fillCircle(x + 16, y + 1, 7);
+    g.fillStyle(0x888888);
+    g.fillCircle(x - 15, y + 1, 4);
+    g.fillCircle(x + 16, y + 1, 4);
+
+    // White side panel (logo area)
+    g.fillStyle(0xFFFFFF, 0.8);
+    g.fillRect(x - 18, y - 24, 26, 10);
+    g.fillStyle(COL_MOXIE, 0.9);
+    g.fillRect(x - 16, y - 22, 22, 6);
+  }
+
+  private drawPottedPlant(gx: number, gy: number) {
+    const g = this.addEnvGraphics().setDepth(gx + gy + 2);
+    const { x, y } = gridToScreen(gx, gy);
+
+    // Pot (terracotta trapezoid via polygon)
+    g.fillStyle(COL_TERRACOTTA);
+    g.beginPath();
+    g.moveTo(x - 8, y - 16);
+    g.lineTo(x + 8, y - 16);
+    g.lineTo(x + 10, y);
+    g.lineTo(x - 10, y);
+    g.closePath();
+    g.fillPath();
+
+    // Soil line at top of pot
+    g.fillStyle(0x6B4020);
+    g.fillRect(x - 8, y - 18, 16, 4);
+
+    // Leaves
+    g.fillStyle(COL_SAGE);
+    g.fillCircle(x, y - 28, 13);
+    g.fillCircle(x - 9, y - 23, 10);
+    g.fillCircle(x + 9, y - 23, 10);
+    g.fillStyle(0x6B9A60, 0.6);
+    g.fillCircle(x + 4, y - 26, 9);
+
+    // Shadow
+    g.fillStyle(0x000000, 0.10);
+    g.fillEllipse(x, y + 2, 24, 8);
   }
 }

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import type { BugData } from '@/game/types';
+import { onShowCatchCard } from '@/game/eventBus';
 
 const GameCanvas = dynamic(() => import('@/components/GameCanvas').then(m => m.GameCanvas), {
   ssr: false,
@@ -18,27 +19,39 @@ const GameCanvas = dynamic(() => import('@/components/GameCanvas').then(m => m.G
 });
 
 const BugBook = dynamic(() => import('@/components/BugBook').then(m => m.BugBook), { ssr: false });
+const CatchCard = dynamic(() => import('@/components/CatchCard').then(m => m.CatchCard), { ssr: false });
 
 export default function Home() {
   const [caughtBugs, setCaughtBugs] = useState<BugData[]>([]);
   const [showBugBook, setShowBugBook] = useState(false);
-  const bugCountRef = useRef(0);
+  const [catchCardBug, setCatchCardBug] = useState<BugData | null>(null);
 
-  const handleBugCaught = useCallback((bug: BugData) => {
-    setCaughtBugs(prev => [...prev, bug]);
-    bugCountRef.current += 1;
+  useEffect(() => {
+    const unsub = onShowCatchCard((bug) => {
+      setCatchCardBug(bug);
+    });
+    return unsub;
+  }, []);
+
+  const handleCardDismiss = useCallback(() => {
+    setCatchCardBug(prev => {
+      if (prev) {
+        setCaughtBugs(bugs => [...bugs, prev]);
+      }
+      return null;
+    });
   }, []);
 
   return (
     <main style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
-      {/* Portrait orientation lock — only visible on mobile in portrait mode */}
+      {/* Portrait orientation lock */}
       <div className="rotate-overlay">
         <span className="rotate-phone-icon">📱</span>
         <p style={{ fontSize: 22, fontWeight: 'bold', margin: 0 }}>Rotate your phone to play</p>
         <p style={{ fontSize: 15, opacity: 0.65, margin: 0 }}>This game is played in landscape</p>
       </div>
 
-      <GameCanvas onBugCaught={handleBugCaught} />
+      <GameCanvas />
 
       <button
         onClick={() => setShowBugBook(true)}
@@ -67,6 +80,10 @@ export default function Home() {
 
       {showBugBook && (
         <BugBook bugs={caughtBugs} onClose={() => setShowBugBook(false)} />
+      )}
+
+      {catchCardBug && (
+        <CatchCard bug={catchCardBug} onDismiss={handleCardDismiss} />
       )}
     </main>
   );

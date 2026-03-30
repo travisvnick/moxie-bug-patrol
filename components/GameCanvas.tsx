@@ -2,37 +2,24 @@
 
 import { useEffect, useRef } from 'react';
 import type Phaser from 'phaser';
-import type { BugData } from '@/game/types';
 
-interface Props {
-  onBugCaught: (bug: BugData) => void;
-}
-
-export function GameCanvas({ onBugCaught }: Props) {
+export function GameCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
-  const callbackRef = useRef(onBugCaught);
-  callbackRef.current = onBugCaught;
 
   useEffect(() => {
     if (gameRef.current || !containerRef.current) return;
 
-    let unsubscribe: (() => void) | undefined;
+    let destroyed = false;
 
     (async () => {
-      const [{ createGame }, { onBugCaught: subscribe }] = await Promise.all([
-        import('@/game/main'),
-        import('@/game/eventBus'),
-      ]);
-
-      if (!containerRef.current || gameRef.current) return;
-
+      const { createGame } = await import('@/game/main');
+      if (destroyed || !containerRef.current || gameRef.current) return;
       gameRef.current = createGame('game-container');
-      unsubscribe = subscribe((bug) => callbackRef.current(bug));
     })();
 
     return () => {
-      unsubscribe?.();
+      destroyed = true;
       if (gameRef.current) {
         gameRef.current.destroy(true);
         gameRef.current = null;

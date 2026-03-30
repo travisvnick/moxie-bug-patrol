@@ -2,8 +2,8 @@ import Phaser from 'phaser';
 import { gridToScreen, screenDirToGrid, GRID_SIZE, COL_MOXIE } from '../constants';
 
 const PLAYER_SPEED = 4.5; // grid units per second
-const MIN_GRID = 0.3;
-const MAX_GRID = GRID_SIZE - 1.3;
+const MIN_GRID = -0.5;
+const MAX_GRID = GRID_SIZE + 0.5; // scene applies per-screen soft walls
 
 export class Player {
   private gfx: Phaser.GameObjects.Graphics;

@@ -3,6 +3,8 @@ export interface BugData {
   name: string;
   color: number;
   description: string;
+  fact: string;
+  rarity: string;
   caughtAt: number;
 }
 
