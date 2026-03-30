@@ -106,7 +106,7 @@ export class PaloVerdeLane extends Phaser.Scene {
     // ─── Desert background fill (covers entire world, no void ever) ──────
     const desertBg = this.add.graphics().setDepth(-10);
     desertBg.fillStyle(0xE8C99A);
-    desertBg.fillRect(-4000, -4000, 12000, 12000);
+    desertBg.fillRect(-20000, -20000, 60000, 60000);
 
     // Subtle color variation patches in the far desert
     const bgPatches = this.add.graphics().setDepth(-9);
@@ -118,12 +118,12 @@ export class PaloVerdeLane extends Phaser.Scene {
       bgPatches.fillEllipse(px, py, Phaser.Math.Between(200, 600), Phaser.Math.Between(100, 300));
     }
 
-    // Sky gradient
+    // Sky gradient — only covers the top portion of the world, not the sides
     const sky = this.add.graphics().setDepth(-8);
     sky.fillGradientStyle(0x0D1B4A, 0x0D1B4A, 0xE8604A, 0xE8604A);
-    sky.fillRect(-4000, -4000, 12000, 3840);
+    sky.fillRect(-20000, -20000, 60000, 23840);
     sky.fillStyle(0xFFB347);
-    sky.fillRect(-4000, -200, 12000, 300);
+    sky.fillRect(-20000, -200, 60000, 300);
 
     // ─── Desert objects beyond tile grid ──────────────────────────────────
     this.drawOuterDesertObjects();
