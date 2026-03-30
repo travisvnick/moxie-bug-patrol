@@ -12,7 +12,11 @@ body {
   background: #87CEEB;
   -webkit-user-select: none;
   user-select: none;
+  /* Prevent all touch scrolling / iOS rubber-band bounce */
   touch-action: none;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+  position: fixed;
 }
 
 #__next,

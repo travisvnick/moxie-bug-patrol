@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { PaloVerdeLane } from './scenes/PaloVerdeLane';
-import { CANVAS_W, CANVAS_H } from './constants';
 
 export function createGame(parent: string): Phaser.Game {
   return new Phaser.Game({

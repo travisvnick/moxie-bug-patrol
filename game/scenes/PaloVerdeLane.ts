@@ -32,16 +32,25 @@ export class PaloVerdeLane extends Phaser.Scene {
   private bugs: Bug[] = [];
   private keys!: KeySet;
 
+  // Mobile scaling
+  private zoom = 1;
+  private screenW = 0;
+  private screenH = 0;
+
   // Catch mini-game
   private catchRing!: Phaser.GameObjects.Graphics;
   private catchTarget: Bug | null = null;
   private ringRadius = RING_MIN;
   private ringDir = 1;
 
-  // HUD
+  // HUD — stored in world coords (= screenCoord / zoom for scrollFactor=0 objects)
   private promptText!: Phaser.GameObjects.Text;
   private scoreText!: Phaser.GameObjects.Text;
   private caughtCount = 0;
+
+  // Catch button world position (used for drawing and hit-testing)
+  private catchBtnWx = 0;
+  private catchBtnWy = 0;
 
   constructor() {
     super({ key: 'PaloVerdeLane' });
@@ -140,6 +149,10 @@ export class PaloVerdeLane extends Phaser.Scene {
     this.input.on('pointerdown', (ptr: Phaser.Input.Pointer) => {
       this.handleTap(ptr);
     });
+
+    // Center camera on player start position
+    const startPos = gridToScreen(7, 7);
+    this.cameras.main.centerOn(startPos.x, startPos.y);
   }
 
   update(_time: number, delta: number) {
