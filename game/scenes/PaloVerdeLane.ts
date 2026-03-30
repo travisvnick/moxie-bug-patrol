@@ -98,9 +98,9 @@ export class PaloVerdeLane extends Phaser.Scene {
       });
     }
 
-    // Mobile zoom: 1.2x on small screens so more world is visible
+    // Mobile zoom: 1.3x on small screens for clear visibility while showing enough world
     if (this.scale.width < 800) {
-      this.cameras.main.setZoom(1.2);
+      this.cameras.main.setZoom(1.3);
     }
 
     const zoom = this.cameras.main.zoom;
