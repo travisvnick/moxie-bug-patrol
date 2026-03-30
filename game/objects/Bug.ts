@@ -7,6 +7,8 @@ export interface BugTypeData {
   color: number;
   bodyColor: number;
   description: string;
+  funFact: string;
+  rarity: 'common' | 'uncommon' | 'rare' | 'legendary';
   wanderSpeed: number;
   fleeSpeed: number;
   sizeMult: number;
@@ -18,6 +20,8 @@ export const BUG_TYPES: BugTypeData[] = [
     color: 0x8B5E3C,
     bodyColor: 0x5C3317,
     description: 'A cool cockroach who thinks he runs this whole block.',
+    funFact: 'Can hold breath 40 min!',
+    rarity: 'common',
     wanderSpeed: 0.8,
     fleeSpeed: 2.5,
     sizeMult: 1.0,
@@ -27,6 +31,8 @@ export const BUG_TYPES: BugTypeData[] = [
     color: 0xD4B896,
     bodyColor: 0xB8956A,
     description: 'A bark scorpion who scurries at full speed everywhere.',
+    funFact: 'Glows blue under UV light!',
+    rarity: 'uncommon',
     wanderSpeed: 1.8,
     fleeSpeed: 3.5,
     sizeMult: 1.0,
@@ -36,6 +42,8 @@ export const BUG_TYPES: BugTypeData[] = [
     color: 0x1A1A2E,
     bodyColor: 0x16213E,
     description: 'A giant palo verde beetle with iridescent wings.',
+    funFact: 'Grows up to 4 inches!',
+    rarity: 'rare',
     wanderSpeed: 1.0,
     fleeSpeed: 2.0,
     sizeMult: 1.3,
@@ -45,6 +53,8 @@ export const BUG_TYPES: BugTypeData[] = [
     color: 0xFF69B4,
     bodyColor: 0x39FF14,
     description: 'A neon moth whose wings pulse with vivid color.',
+    funFact: 'Navigates by moonlight!',
+    rarity: 'legendary',
     wanderSpeed: 1.4,
     fleeSpeed: 3.0,
     sizeMult: 1.1,
@@ -54,6 +64,8 @@ export const BUG_TYPES: BugTypeData[] = [
     color: 0xCC2200,
     bodyColor: 0xFF3300,
     description: 'A tiny ant who always carries something bigger than himself.',
+    funFact: 'Carries 50x its weight!',
+    rarity: 'common',
     wanderSpeed: 1.0,
     fleeSpeed: 2.2,
     sizeMult: 0.6,
@@ -64,7 +76,8 @@ const FLEE_RADIUS = 3.2;
 const SETTLE_RADIUS = 5.0;
 const MIN_GRID = 0.5;
 const MAX_GRID = GRID_SIZE - 1.5;
-const PROXIMITY_NAME_RADIUS = 2.5; // grid units — show name label when player this close
+const PROXIMITY_NAME_RADIUS = 2.5;
+const REVEAL_RADIUS = 1.5; // grid units — player must be this close to reveal a hidden bug
 
 export class Bug {
   private gfx: Phaser.GameObjects.Graphics;
@@ -72,11 +85,13 @@ export class Bug {
 
   gx: number;
   gy: number;
-  state: BugState = BugState.WANDER;
+  state: BugState = BugState.HIDDEN;
   caught = false;
+  revealed = false;
 
   private boostActive = false;
   private boostTimer = 0;
+  private currentAlpha = 0;
 
   readonly typeData: BugTypeData;
   readonly typeIndex: number;
@@ -98,6 +113,7 @@ export class Bug {
     this.id = `bug_${typeIndex}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     this.wanderDelay = 1000 + Math.random() * 2500;
     this.gfx = scene.add.graphics();
+    this.gfx.setAlpha(0);
 
     this.nameLabel = scene.add.text(0, 0, this.typeData.name, {
       fontSize: '13px',
@@ -108,6 +124,39 @@ export class Bug {
     }).setOrigin(0.5).setDepth(180).setAlpha(0);
 
     this.redraw();
+  }
+
+  reveal() {
+    if (this.revealed) return;
+    this.revealed = true;
+    this.state = BugState.FLEE;
+
+    // "!" pop text
+    const { x, y } = gridToScreen(this.gx, this.gy);
+    const alert = this.scene.add.text(x, y - 40, '!', {
+      fontSize: '28px',
+      fontStyle: 'bold',
+      color: '#FF4444',
+      stroke: '#000000',
+      strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(300);
+    this.scene.tweens.add({
+      targets: alert,
+      y: y - 80,
+      alpha: 0,
+      duration: 800,
+      ease: 'Power2',
+      onComplete: () => alert.destroy(),
+    });
+
+    // Fade bug in
+    this.scene.tweens.add({
+      targets: this.gfx,
+      alpha: 1,
+      duration: 300,
+      ease: 'Power2',
+    });
+    this.currentAlpha = 1;
   }
 
   /** Temporarily boost flee speed (called on catch miss). */
@@ -126,6 +175,17 @@ export class Bug {
     const pdx = playerGx - this.gx;
     const pdy = playerGy - this.gy;
     const playerDist = Math.hypot(pdx, pdy);
+
+    // Check reveal trigger
+    if (!this.revealed && playerDist < REVEAL_RADIUS) {
+      this.reveal();
+    }
+
+    // Hidden bugs don't move or show name
+    if (!this.revealed) {
+      this.redraw();
+      return;
+    }
 
     if (this.boostActive) {
       this.boostTimer -= delta;

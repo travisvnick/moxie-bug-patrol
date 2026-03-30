@@ -18,15 +18,18 @@ const GameCanvas = dynamic(() => import('@/components/GameCanvas').then(m => m.G
 });
 
 const BugBook = dynamic(() => import('@/components/BugBook').then(m => m.BugBook), { ssr: false });
+const CatchCard = dynamic(() => import('@/components/CatchCard').then(m => m.CatchCard), { ssr: false });
 
 export default function Home() {
   const [caughtBugs, setCaughtBugs] = useState<BugData[]>([]);
   const [showBugBook, setShowBugBook] = useState(false);
+  const [catchCardBug, setCatchCardBug] = useState<BugData | null>(null);
   const bugCountRef = useRef(0);
 
   const handleBugCaught = useCallback((bug: BugData) => {
     setCaughtBugs(prev => [...prev, bug]);
     bugCountRef.current += 1;
+    setCatchCardBug(bug);
   }, []);
 
   return (
@@ -67,6 +70,10 @@ export default function Home() {
 
       {showBugBook && (
         <BugBook bugs={caughtBugs} onClose={() => setShowBugBook(false)} />
+      )}
+
+      {catchCardBug && (
+        <CatchCard bug={catchCardBug} onDismiss={() => setCatchCardBug(null)} />
       )}
     </main>
   );
