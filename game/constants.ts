@@ -5,7 +5,7 @@ export const TILE_W = TILE_HW * 2;
 export const TILE_H = TILE_HH * 2;
 
 // Grid
-export const GRID_SIZE = 14;
+export const GRID_SIZE = 20;
 export const GRID_ORIGIN_X = 800;
 export const GRID_ORIGIN_Y = 200;
 
