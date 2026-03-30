@@ -1,66 +1,63 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
+
+import { useState, useCallback, useRef } from 'react';
+import dynamic from 'next/dynamic';
+import type { BugData } from '@/game/types';
+
+const GameCanvas = dynamic(() => import('@/components/GameCanvas').then(m => m.GameCanvas), {
+  ssr: false,
+  loading: () => (
+    <div style={{
+      width: '100vw', height: '100vh',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: '#87CEEB', color: '#2D6A4F', fontSize: 24, fontWeight: 'bold',
+    }}>
+      Loading Palo Verde Lane...
+    </div>
+  ),
+});
+
+const BugBook = dynamic(() => import('@/components/BugBook').then(m => m.BugBook), { ssr: false });
 
 export default function Home() {
+  const [caughtBugs, setCaughtBugs] = useState<BugData[]>([]);
+  const [showBugBook, setShowBugBook] = useState(false);
+  const bugCountRef = useRef(0);
+
+  const handleBugCaught = useCallback((bug: BugData) => {
+    setCaughtBugs(prev => [...prev, bug]);
+    bugCountRef.current += 1;
+  }, []);
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+      <GameCanvas onBugCaught={handleBugCaught} />
+
+      <button
+        onClick={() => setShowBugBook(true)}
+        style={{
+          position: 'fixed',
+          top: 16,
+          right: 16,
+          zIndex: 500,
+          background: '#C4613A',
+          color: '#fff',
+          border: '2px solid #ffffff88',
+          borderRadius: 8,
+          padding: '8px 16px',
+          fontSize: 14,
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          fontFamily: 'Georgia, serif',
+        }}
+      >
+        Bug Book ({caughtBugs.length})
+      </button>
+
+      {showBugBook && (
+        <BugBook bugs={caughtBugs} onClose={() => setShowBugBook(false)} />
+      )}
+    </main>
   );
 }
