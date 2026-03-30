@@ -263,9 +263,30 @@ export class PaloVerdeLane extends Phaser.Scene {
       this.player.setIdle();
     }
 
-    // Bug AI
+    // Bug AI + hidden bug reveal detection
     for (const bug of this.bugs) {
-      if (!bug.caught) bug.update(delta, this.player.gx, this.player.gy);
+      if (bug.caught) continue;
+
+      // Proximity check: reveal hidden bugs when player walks near
+      if (bug.hidden) {
+        const d = Math.hypot(bug.gx - this.player.gx, bug.gy - this.player.gy);
+        if (d < 1.5) {
+          bug.reveal();
+          // "!" surprise pop
+          const { x: bx, y: by } = bug.getScreenPos();
+          const bang = this.add.text(bx, by - 30, '!', {
+            fontSize: '32px', fontStyle: 'bold',
+            color: '#FFD700', stroke: '#000000', strokeThickness: 3,
+          }).setOrigin(0.5).setDepth(300);
+          this.tweens.add({
+            targets: bang, y: by - 70, alpha: 0, duration: 800,
+            ease: 'Power2', onComplete: () => bang.destroy(),
+          });
+        }
+        continue; // still hidden this frame — skip AI update
+      }
+
+      bug.update(delta, this.player.gx, this.player.gy);
     }
 
     // Camera follow target — update the invisible follow target
@@ -408,7 +429,7 @@ export class PaloVerdeLane extends Phaser.Scene {
     if (this.catchTarget) { this.attemptCatch(); return; }
 
     for (const bug of this.bugs) {
-      if (bug.caught || !bug.reveal) continue;
+      if (bug.caught || bug.hidden) continue;
       const distToPlayer = Math.hypot(bug.gx - this.player.gx, bug.gy - this.player.gy);
       if (distToPlayer < CATCH_RADIUS) {
         const { x: bx, y: by } = bug.getScreenPos();
@@ -432,7 +453,7 @@ export class PaloVerdeLane extends Phaser.Scene {
     let nearest: Bug | null = null;
     let nearestDist = Infinity;
     for (const bug of this.bugs) {
-      if (bug.caught || !bug.reveal) continue;
+      if (bug.caught || bug.hidden) continue;
       const d = Math.hypot(bug.gx - this.player.gx, bug.gy - this.player.gy);
       if (d < CATCH_RADIUS && d < nearestDist) { nearest = bug; nearestDist = d; }
     }
