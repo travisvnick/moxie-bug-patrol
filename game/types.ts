@@ -11,4 +11,5 @@ export interface BugData {
 export enum BugState {
   WANDER = 'WANDER',
   FLEE = 'FLEE',
+  HIDDEN = 'HIDDEN',
 }
