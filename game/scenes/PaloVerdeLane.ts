@@ -62,9 +62,9 @@ export class PaloVerdeLane extends Phaser.Scene {
     // Extend sky/ground far beyond canvas so camera scroll never shows gaps
     const sky = this.add.graphics().setDepth(-2);
     sky.fillGradientStyle(0x5BA3C9, 0x5BA3C9, 0xB8D4E8, 0xB8D4E8);
-    sky.fillRect(-CANVAS_W, -CANVAS_H, CANVAS_W * 4, CANVAS_H * 0.45 + CANVAS_H);
+    sky.fillRect(-CANVAS_W * 2, -CANVAS_H * 2, CANVAS_W * 6, CANVAS_H * 0.45 + CANVAS_H * 3);
     sky.fillStyle(0xD4A76A);
-    sky.fillRect(-CANVAS_W, CANVAS_H * 0.45, CANVAS_W * 4, CANVAS_H);
+    sky.fillRect(-CANVAS_W * 2, CANVAS_H * 0.45, CANVAS_W * 6, CANVAS_H * 4);
 
     // Ground tiles
     this.drawGround();
@@ -100,7 +100,7 @@ export class PaloVerdeLane extends Phaser.Scene {
 
     // Mobile zoom (2x on small screens)
     if (this.scale.width < 800) {
-      this.cameras.main.setZoom(2);
+      this.cameras.main.setZoom(1.3);
     }
 
     const zoom = this.cameras.main.zoom;
