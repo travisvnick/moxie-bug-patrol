@@ -8,8 +8,7 @@ export function createGame(parent: string): Phaser.Game {
     parent,
     backgroundColor: '#87CEEB',
     scale: {
-      mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.CENTER_BOTH,
+      mode: Phaser.Scale.RESIZE,
       width: CANVAS_W,
       height: CANVAS_H,
     },

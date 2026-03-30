@@ -1,9 +1,8 @@
 import Phaser from 'phaser';
 import { Player } from '../objects/Player';
 import { Bug } from '../objects/Bug';
-import { VirtualJoystick } from '../objects/VirtualJoystick';
 import {
-  gridToScreen,
+  gridToScreen, screenToGrid,
   TILE_HW, TILE_HH,
   GRID_SIZE,
   CANVAS_W, CANVAS_H,
@@ -18,6 +17,7 @@ const RING_MIN = 8;
 const RING_MAX = 44;
 const RING_SPEED = 60;         // px/sec
 const CATCH_WINDOW_MAX = 22;   // px — ring within this = green zone
+const BUG_TAP_RADIUS = 24;    // world pixels — how close a tap must be to a bug
 
 type KeySet = Phaser.Types.Input.Keyboard.CursorKeys & {
   w: Phaser.Input.Keyboard.Key;
@@ -30,7 +30,6 @@ type KeySet = Phaser.Types.Input.Keyboard.CursorKeys & {
 export class PaloVerdeLane extends Phaser.Scene {
   private player!: Player;
   private bugs: Bug[] = [];
-  private joystick!: VirtualJoystick;
   private keys!: KeySet;
 
   // Catch mini-game
@@ -41,8 +40,6 @@ export class PaloVerdeLane extends Phaser.Scene {
 
   // HUD
   private promptText!: Phaser.GameObjects.Text;
-  private catchBtn!: Phaser.GameObjects.Graphics;
-  private catchBtnText!: Phaser.GameObjects.Text;
   private scoreText!: Phaser.GameObjects.Text;
   private caughtCount = 0;
 
@@ -53,23 +50,23 @@ export class PaloVerdeLane extends Phaser.Scene {
   // ─── Lifecycle ────────────────────────────────────────────────────────────
 
   create() {
-    // Sky
-    const sky = this.add.graphics();
+    // Extend sky/ground far beyond canvas so camera scroll never shows gaps
+    const sky = this.add.graphics().setDepth(-2);
     sky.fillGradientStyle(0x5BA3C9, 0x5BA3C9, 0xB8D4E8, 0xB8D4E8);
-    sky.fillRect(0, 0, CANVAS_W, CANVAS_H * 0.45);
+    sky.fillRect(-CANVAS_W, -CANVAS_H, CANVAS_W * 4, CANVAS_H * 0.45 + CANVAS_H);
     sky.fillStyle(0xD4A76A);
-    sky.fillRect(0, CANVAS_H * 0.45, CANVAS_W, CANVAS_H * 0.55);
+    sky.fillRect(-CANVAS_W, CANVAS_H * 0.45, CANVAS_W * 4, CANVAS_H);
 
     // Ground tiles
     this.drawGround();
 
-    // Static environment objects (sorted by depth manually)
+    // Static environment objects
     this.drawEnvironment();
 
     // Player starts near center
     this.player = new Player(this, 7, 7);
 
-    // Bugs — 5 bugs spread across the grid
+    // 5 bugs spread across the grid
     const bugSpots: [number, number, number][] = [
       [3, 4, 0],
       [11, 5, 1],
@@ -81,7 +78,7 @@ export class PaloVerdeLane extends Phaser.Scene {
       this.bugs.push(new Bug(this, gx, gy, type));
     }
 
-    // Input
+    // Keyboard input
     if (this.input.keyboard) {
       this.keys = Object.assign(this.input.keyboard.createCursorKeys(), {
         w: this.input.keyboard.addKey('W'),
@@ -92,54 +89,81 @@ export class PaloVerdeLane extends Phaser.Scene {
       });
     }
 
-    // Virtual joystick (bottom-left)
-    this.joystick = new VirtualJoystick(this, 110, CANVAS_H - 110);
+    // Mobile zoom (2x on small screens)
+    if (this.scale.width < 800) {
+      this.cameras.main.setZoom(2);
+    }
 
-    // Catch ring (drawn each frame)
+    const zoom = this.cameras.main.zoom;
+    // "Virtual" screen dimensions in world-space units (accounts for zoom)
+    const sw = this.scale.width / zoom;
+    const sh = this.scale.height / zoom;
+
+    // Catch ring (drawn each frame over bugs)
     this.catchRing = this.add.graphics().setDepth(200);
 
-    // Catch button (bottom-right, touch)
-    this.catchBtn = this.add.graphics().setScrollFactor(0).setDepth(201);
-    this.drawCatchButton(false);
-
-    this.catchBtnText = this.add.text(CANVAS_W - 100, CANVAS_H - 110, 'NET!', {
-      fontSize: '22px',
-      fontStyle: 'bold',
-      color: '#ffffff',
-      stroke: '#1A4030',
-      strokeThickness: 3,
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(202).setAlpha(0);
-
-    // Prompt text (bottom centre)
-    this.promptText = this.add.text(CANVAS_W / 2, CANVAS_H - 30, '', {
-      fontSize: '18px',
+    // Prompt text (bottom centre, screen-fixed)
+    this.promptText = this.add.text(sw / 2, sh - 36 / zoom, '', {
+      fontSize: `${Math.round(18 / zoom)}px`,
       color: '#ffffff',
       backgroundColor: '#00000099',
       padding: { x: 12, y: 5 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(202).setAlpha(0);
 
-    // Score / title (top-left)
-    this.scoreText = this.add.text(18, 16, 'Bugs caught: 0', {
-      fontSize: '18px',
+    // Score (top-left, screen-fixed)
+    this.scoreText = this.add.text(16 / zoom, 14 / zoom, 'Bugs caught: 0', {
+      fontSize: `${Math.round(18 / zoom)}px`,
       fontStyle: 'bold',
       color: '#2D6A4F',
       backgroundColor: '#ffffffcc',
       padding: { x: 10, y: 5 },
     }).setScrollFactor(0).setDepth(202);
 
-    // Touch catch — right half of screen
+    // "Tap to move" hint — fades out after 3s
+    const hint = this.add.text(sw / 2, sh * 0.72, 'Tap anywhere to move!', {
+      fontSize: `${Math.round(22 / zoom)}px`,
+      fontStyle: 'bold',
+      color: '#ffffff',
+      backgroundColor: '#00000088',
+      padding: { x: 16, y: 9 },
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(210);
+
+    this.tweens.add({
+      targets: hint,
+      alpha: 0,
+      delay: 2800,
+      duration: 700,
+      onComplete: () => hint.destroy(),
+    });
+
+    // Touch input: tap-to-move or tap-to-catch
     this.input.on('pointerdown', (ptr: Phaser.Input.Pointer) => {
-      if (ptr.x > CANVAS_W / 2) this.attemptCatch();
+      this.handleTap(ptr);
     });
   }
 
   update(_time: number, delta: number) {
-    this.handleInput(delta);
+    // Keyboard movement (cancels tap-to-move while held)
+    this.handleKeyboard(delta);
+
+    // Tap-to-move walk step
+    this.player.updateMove(delta);
+
+    // Bug AI
     for (const bug of this.bugs) {
       if (!bug.caught) bug.update(delta, this.player.gx, this.player.gy);
     }
+
+    // Camera follows player
+    const { x: px, y: py } = this.player.getScreenPos();
+    const cam = this.cameras.main;
+    cam.scrollX = px - cam.width / cam.zoom / 2;
+    cam.scrollY = py - cam.height / cam.zoom / 2;
+
+    // Catch mini-game
     this.updateCatchGame(delta);
 
+    // SPACE key catch attempt
     if (this.keys?.space && Phaser.Input.Keyboard.JustDown(this.keys.space)) {
       this.attemptCatch();
     }
@@ -147,27 +171,46 @@ export class PaloVerdeLane extends Phaser.Scene {
 
   // ─── Input ────────────────────────────────────────────────────────────────
 
-  private handleInput(delta: number) {
+  private handleKeyboard(delta: number) {
+    if (!this.keys) return;
     let sdx = 0;
     let sdy = 0;
 
-    if (this.keys) {
-      if (this.keys.left.isDown || this.keys.a.isDown)  sdx -= 1;
-      if (this.keys.right.isDown || this.keys.d.isDown) sdx += 1;
-      if (this.keys.up.isDown || this.keys.w.isDown)    sdy -= 1;
-      if (this.keys.down.isDown || this.keys.s.isDown)  sdy += 1;
-    }
-
-    if (Math.abs(this.joystick.dx) > 0.05 || Math.abs(this.joystick.dy) > 0.05) {
-      sdx = this.joystick.dx;
-      sdy = this.joystick.dy;
-    }
+    if (this.keys.left.isDown || this.keys.a.isDown)  sdx -= 1;
+    if (this.keys.right.isDown || this.keys.d.isDown) sdx += 1;
+    if (this.keys.up.isDown || this.keys.w.isDown)    sdy -= 1;
+    if (this.keys.down.isDown || this.keys.s.isDown)  sdy += 1;
 
     if (sdx !== 0 || sdy !== 0) {
-      // Normalise diagonal keyboard input
       const len = Math.hypot(sdx, sdy);
       this.player.move(sdx / len, sdy / len, delta);
+      this.player.stopMove(); // keyboard overrides tap-to-move
     }
+  }
+
+  private handleTap(ptr: Phaser.Input.Pointer) {
+    // If catch game is active, any tap times the catch
+    if (this.catchTarget) {
+      this.attemptCatch();
+      return;
+    }
+
+    // Tap near a bug that's within catch range → attempt catch
+    for (const bug of this.bugs) {
+      if (bug.caught) continue;
+      const distToPlayer = Math.hypot(bug.gx - this.player.gx, bug.gy - this.player.gy);
+      if (distToPlayer < CATCH_RADIUS) {
+        const { x: bx, y: by } = bug.getScreenPos();
+        if (Math.hypot(ptr.worldX - bx, ptr.worldY - by) < BUG_TAP_RADIUS) {
+          this.attemptCatch();
+          return;
+        }
+      }
+    }
+
+    // Otherwise tap-to-move: convert world tap position to grid coords
+    const { gx, gy } = screenToGrid(ptr.worldX, ptr.worldY);
+    this.player.moveTo(gx, gy);
   }
 
   // ─── Catch mini-game ──────────────────────────────────────────────────────
@@ -197,7 +240,7 @@ export class PaloVerdeLane extends Phaser.Scene {
 
       const inWindow = this.ringRadius <= CATCH_WINDOW_MAX;
       const { x, y } = nearest.getScreenPos();
-      const oy = y - 10; // offset to sprite center
+      const oy = y - 10;
 
       this.catchRing.clear();
       // Green "sweet spot" zone indicator
@@ -207,21 +250,16 @@ export class PaloVerdeLane extends Phaser.Scene {
       this.catchRing.lineStyle(3, inWindow ? 0x00FF88 : 0xFFFF00, 0.9);
       this.catchRing.strokeCircle(x, oy, this.ringRadius);
 
-      this.promptText.setText('Press SPACE  or tap NET! to catch!').setAlpha(1);
-      this.drawCatchButton(true);
-      this.catchBtnText.setAlpha(1);
+      this.promptText.setText('Tap to catch!').setAlpha(1);
     } else {
       this.catchRing.clear();
       this.promptText.setAlpha(0);
-      this.drawCatchButton(false);
-      this.catchBtnText.setAlpha(0);
     }
   }
 
   private attemptCatch() {
     if (!this.catchTarget) return;
-    const inWindow = this.ringRadius <= CATCH_WINDOW_MAX;
-    if (inWindow) {
+    if (this.ringRadius <= CATCH_WINDOW_MAX) {
       this.catchBug(this.catchTarget);
     } else {
       this.flashMiss();
@@ -477,17 +515,5 @@ export class PaloVerdeLane extends Phaser.Scene {
     g.fillStyle(COL_CACTUS);
     g.fillRoundedRect(x - 28, y - 42, 18, 8, 4);
     g.fillRoundedRect(x + 10, y - 37, 16, 8, 4);
-  }
-
-  // ─── HUD helper ───────────────────────────────────────────────────────────
-
-  private drawCatchButton(active: boolean) {
-    this.catchBtn.clear();
-    const bx = CANVAS_W - 100;
-    const by = CANVAS_H - 110;
-    this.catchBtn.fillStyle(COL_MOXIE, active ? 0.9 : 0.35);
-    this.catchBtn.fillCircle(bx, by, 54);
-    this.catchBtn.lineStyle(3, 0xffffff, active ? 0.85 : 0.3);
-    this.catchBtn.strokeCircle(bx, by, 54);
   }
 }

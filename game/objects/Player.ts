@@ -12,6 +12,9 @@ export class Player {
   gx: number;
   gy: number;
 
+  private moveTargetGx: number | null = null;
+  private moveTargetGy: number | null = null;
+
   constructor(private scene: Phaser.Scene, gx: number, gy: number) {
     this.gx = gx;
     this.gy = gy;
@@ -21,7 +24,7 @@ export class Player {
   }
 
   /**
-   * Move using a screen-space direction vector (from keyboard or joystick).
+   * Move using a screen-space direction vector (from keyboard).
    * dx/dy should be normalised to [-1, 1].
    */
   move(sdx: number, sdy: number, delta: number) {
@@ -30,6 +33,39 @@ export class Player {
     this.gx = Phaser.Math.Clamp(this.gx + dgx * speed, MIN_GRID, MAX_GRID);
     this.gy = Phaser.Math.Clamp(this.gy + dgy * speed, MIN_GRID, MAX_GRID);
     this.redraw();
+  }
+
+  /** Set a tap-to-move destination in grid coords. */
+  moveTo(gx: number, gy: number) {
+    this.moveTargetGx = Phaser.Math.Clamp(gx, MIN_GRID, MAX_GRID);
+    this.moveTargetGy = Phaser.Math.Clamp(gy, MIN_GRID, MAX_GRID);
+  }
+
+  /** Cancel tap-to-move (e.g. when keyboard takes over). */
+  stopMove() {
+    this.moveTargetGx = null;
+    this.moveTargetGy = null;
+  }
+
+  /** Returns true if still walking toward a tap target. Call each frame. */
+  updateMove(delta: number): boolean {
+    if (this.moveTargetGx === null || this.moveTargetGy === null) return false;
+    const dx = this.moveTargetGx - this.gx;
+    const dy = this.moveTargetGy - this.gy;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 0.08) {
+      this.moveTargetGx = null;
+      this.moveTargetGy = null;
+      return false;
+    }
+    const speed = PLAYER_SPEED * (delta / 1000);
+    const step = Math.min(speed, dist);
+    this.gx += (dx / dist) * step;
+    this.gy += (dy / dist) * step;
+    this.gx = Phaser.Math.Clamp(this.gx, MIN_GRID, MAX_GRID);
+    this.gy = Phaser.Math.Clamp(this.gy, MIN_GRID, MAX_GRID);
+    this.redraw();
+    return true;
   }
 
   private redraw() {

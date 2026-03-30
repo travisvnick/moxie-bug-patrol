@@ -37,11 +37,23 @@ export function gridToScreen(gx: number, gy: number): { x: number; y: number } {
 
 /**
  * Convert a screen-space direction vector to grid-space direction vector.
- * Useful for mapping joystick (screen) input to world movement.
+ * Useful for mapping keyboard input to world movement.
  */
 export function screenDirToGrid(sdx: number, sdy: number): { gx: number; gy: number } {
   return {
     gx: sdx / TILE_HW * 0.5 + sdy / TILE_HH * 0.5,
     gy: sdy / TILE_HH * 0.5 - sdx / TILE_HW * 0.5,
+  };
+}
+
+/**
+ * Convert a world screen position back to grid coordinates (inverse of gridToScreen).
+ */
+export function screenToGrid(sx: number, sy: number): { gx: number; gy: number } {
+  const u = (sx - GRID_ORIGIN_X) / TILE_HW;
+  const v = (sy - GRID_ORIGIN_Y) / TILE_HH;
+  return {
+    gx: (u + v) / 2,
+    gy: (v - u) / 2,
   };
 }
