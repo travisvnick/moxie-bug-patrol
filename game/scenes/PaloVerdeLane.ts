@@ -108,7 +108,6 @@ export class PaloVerdeLane extends Phaser.Scene {
   // HUD
   private promptText!: Phaser.GameObjects.Text;
   private scoreText!: Phaser.GameObjects.Text;
-  private screenLabel!: Phaser.GameObjects.Text;
   private caughtCount = 0;
 
   // Hold-to-move state
@@ -164,7 +163,7 @@ export class PaloVerdeLane extends Phaser.Scene {
     // Catch ring
     this.catchRing = this.add.graphics().setDepth(200);
 
-    // Prompt text
+    // Prompt text (bottom-centre, screen-fixed)
     this.promptText = this.add.text(sw / 2, sh - 36 / this.zoom, '', {
       fontSize: `${Math.round(18 / this.zoom)}px`,
       color: '#ffffff',
@@ -172,7 +171,7 @@ export class PaloVerdeLane extends Phaser.Scene {
       padding: { x: 12, y: 5 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(202).setAlpha(0);
 
-    // Score
+    // Score (top-left, screen-fixed)
     this.scoreText = this.add.text(16 / this.zoom, 14 / this.zoom, 'Bugs caught: 0', {
       fontSize: `${Math.round(18 / this.zoom)}px`,
       fontStyle: 'bold',
@@ -181,16 +180,7 @@ export class PaloVerdeLane extends Phaser.Scene {
       padding: { x: 10, y: 5 },
     }).setScrollFactor(0).setDepth(202);
 
-    // Screen label
-    this.screenLabel = this.add.text(sw / 2, 14 / this.zoom, 'Area 1', {
-      fontSize: `${Math.round(16 / this.zoom)}px`,
-      fontStyle: 'bold',
-      color: '#E8C99A',
-      backgroundColor: '#00000088',
-      padding: { x: 10, y: 4 },
-    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(202);
-
-    // Hint
+    // Hint — fades out after 3s
     const hint = this.add.text(sw / 2, sh * 0.72, 'Hold to move, tap to catch!', {
       fontSize: `${Math.round(22 / this.zoom)}px`,
       fontStyle: 'bold',
@@ -207,12 +197,7 @@ export class PaloVerdeLane extends Phaser.Scene {
       onComplete: () => hint.destroy(),
     });
 
-    // Fade overlay for screen transitions (full-screen black rect, starts transparent)
-    this.fadeOverlay = this.add.graphics().setDepth(500).setScrollFactor(0).setAlpha(0);
-    this.fadeOverlay.fillStyle(0x000000);
-    this.fadeOverlay.fillRect(0, 0, this.scale.width / this.zoom + 100, this.scale.height / this.zoom + 100);
-
-    // Pointer input
+    // Pointer input: hold-to-move
     this.input.on('pointerdown', (ptr: Phaser.Input.Pointer) => {
       this.handlePointerDown(ptr);
     });
@@ -293,131 +278,6 @@ export class PaloVerdeLane extends Phaser.Scene {
     // SPACE key catch attempt
     if (this.keys?.space && Phaser.Input.Keyboard.JustDown(this.keys.space)) {
       this.attemptCatch();
-    }
-
-    // Check screen boundaries
-    this.checkScreenTransition();
-  }
-
-  // ─── Screen transitions ──────────────────────────────────────────────────
-
-  private checkScreenTransition() {
-    const pgx = this.player.gx;
-    const pgy = this.player.gy;
-
-    let nextScreen = -1;
-    let entryGx = 7;
-    let entryGy = 7;
-
-    if (pgx <= SCREEN_EDGE_THRESHOLD) {
-      // Left edge → previous screen, enter from right
-      nextScreen = (this.currentScreen + 3) % 4;
-      entryGx = GRID_SIZE - 2;
-      entryGy = pgy;
-    } else if (pgx >= GRID_SIZE - 1 - SCREEN_EDGE_THRESHOLD) {
-      // Right edge → next screen, enter from left
-      nextScreen = (this.currentScreen + 1) % 4;
-      entryGx = 1.5;
-      entryGy = pgy;
-    } else if (pgy <= SCREEN_EDGE_THRESHOLD) {
-      // Top edge
-      nextScreen = (this.currentScreen + 2) % 4;
-      entryGx = pgx;
-      entryGy = GRID_SIZE - 2;
-    } else if (pgy >= GRID_SIZE - 1 - SCREEN_EDGE_THRESHOLD) {
-      // Bottom edge
-      nextScreen = (this.currentScreen + 2) % 4;
-      entryGx = pgx;
-      entryGy = 1.5;
-    }
-
-    if (nextScreen >= 0 && nextScreen !== this.currentScreen) {
-      this.doScreenTransition(nextScreen, entryGx, entryGy);
-    }
-  }
-
-  private doScreenTransition(nextScreen: number, entryGx: number, entryGy: number) {
-    this.transitioning = true;
-    this.pointerHeld = false;
-    this.player.stopMove();
-
-    // Fade to black
-    this.tweens.add({
-      targets: this.fadeOverlay,
-      alpha: 1,
-      duration: 300,
-      ease: 'Power2',
-      onComplete: () => {
-        // Clear current screen objects
-        this.clearScreen();
-
-        // Load new screen
-        this.currentScreen = nextScreen;
-        this.loadScreen(nextScreen);
-
-        // Reposition player
-        this.player.gx = entryGx;
-        this.player.gy = entryGy;
-
-        // Update screen label
-        this.screenLabel.setText(`Area ${nextScreen + 1}`);
-
-        // Snap camera
-        const { x, y } = this.player.getScreenPos();
-        const cam = this.cameras.main;
-        cam.scrollX = x - (cam.width / 2) / cam.zoom;
-        cam.scrollY = y - (cam.height / 2) / cam.zoom;
-
-        // Fade back in
-        this.tweens.add({
-          targets: this.fadeOverlay,
-          alpha: 0,
-          duration: 300,
-          ease: 'Power2',
-          onComplete: () => {
-            this.transitioning = false;
-          },
-        });
-      },
-    });
-  }
-
-  private clearScreen() {
-    // Destroy bugs
-    for (const bug of this.bugs) {
-      bug.destroy();
-    }
-    this.bugs = [];
-
-    // Destroy environment graphics
-    for (const g of this.envGraphics) {
-      g.destroy();
-    }
-    this.envGraphics = [];
-
-    this.catchTarget = null;
-    this.catchRing.clear();
-  }
-
-  private loadScreen(screenIndex: number) {
-    const layout = SCREEN_LAYOUTS[screenIndex];
-
-    // Draw environment objects
-    for (const [gx, gy] of layout.houses) {
-      this.drawHouse(gx, gy);
-    }
-    for (const [gx, gy] of layout.trees) {
-      this.drawPaloVerde(gx, gy);
-    }
-    for (const [gx, gy] of layout.saguaros) {
-      this.drawSaguaro(gx, gy);
-    }
-
-    // Spawn hidden bugs near environment objects
-    for (let i = 0; i < layout.bugs.length; i++) {
-      const [gx, gy] = layout.bugs[i];
-      const typeIndex = (screenIndex * 5 + i) % 5;
-      this.bugs.push(new Bug(this, gx, gy, typeIndex));
     }
   }
 
@@ -854,7 +714,7 @@ export class PaloVerdeLane extends Phaser.Scene {
     g.closePath();
     g.fillPath();
 
-    // Roof
+    // Roof (terracotta)
     g.fillStyle(COL_TERRACOTTA);
     const roofH = 28;
     g.beginPath();

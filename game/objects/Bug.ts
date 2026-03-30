@@ -84,13 +84,12 @@ export class Bug {
 
   gx: number;
   gy: number;
-  state: BugState = BugState.HIDDEN;
+  state: BugState = BugState.WANDER;
   caught = false;
   hidden = true;
 
   private boostActive = false;
   private boostTimer = 0;
-  private currentAlpha = 0;
 
   readonly typeData: BugTypeData;
   readonly typeIndex: number;
@@ -112,7 +111,6 @@ export class Bug {
     this.id = `bug_${typeIndex}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     this.wanderDelay = 1000 + Math.random() * 2500;
     this.gfx = scene.add.graphics();
-    this.gfx.setAlpha(0);
 
     this.nameLabel = scene.add.text(0, 0, this.typeData.name, {
       fontSize: '13px',
@@ -149,17 +147,6 @@ export class Bug {
     const pdx = playerGx - this.gx;
     const pdy = playerGy - this.gy;
     const playerDist = Math.hypot(pdx, pdy);
-
-    // Check reveal trigger
-    if (!this.revealed && playerDist < REVEAL_RADIUS) {
-      this.reveal();
-    }
-
-    // Hidden bugs don't move or show name
-    if (!this.revealed) {
-      this.redraw();
-      return;
-    }
 
     if (this.boostActive) {
       this.boostTimer -= delta;
