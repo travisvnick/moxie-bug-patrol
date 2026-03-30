@@ -31,6 +31,13 @@ export default function Home() {
 
   return (
     <main style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+      {/* Portrait orientation lock — only visible on mobile in portrait mode */}
+      <div className="rotate-overlay">
+        <span className="rotate-phone-icon">📱</span>
+        <p style={{ fontSize: 22, fontWeight: 'bold', margin: 0 }}>Rotate your phone to play</p>
+        <p style={{ fontSize: 15, opacity: 0.65, margin: 0 }}>This game is played in landscape</p>
+      </div>
+
       <GameCanvas onBugCaught={handleBugCaught} />
 
       <button

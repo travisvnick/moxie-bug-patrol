@@ -63,12 +63,13 @@ export class PaloVerdeLane extends Phaser.Scene {
 
   create() {
     // Sky: warm Arizona sunset gradient (deep blue → orange)
+    // Rect is 8000×8000 centered on the map so edges never show when camera follows player
     const sky = this.add.graphics().setDepth(-2);
     sky.fillGradientStyle(0x0D1B4A, 0x0D1B4A, 0xE8604A, 0xE8604A);
-    sky.fillRect(-CANVAS_W * 2, -CANVAS_H * 2, CANVAS_W * 6, CANVAS_H * 0.45 + CANVAS_H * 3);
-    // Warm golden horizon
+    sky.fillRect(-3200, -3200, 8000, 3840);
+    // Warm golden horizon — extends generously below and to all sides
     sky.fillStyle(0xFFB347);
-    sky.fillRect(-CANVAS_W * 2, CANVAS_H * 0.45, CANVAS_W * 6, CANVAS_H * 4);
+    sky.fillRect(-3200, 405, 8000, 4400);
 
     this.drawGround();
     this.drawEnvironment();
@@ -186,11 +187,12 @@ export class PaloVerdeLane extends Phaser.Scene {
       if (!bug.caught) bug.update(delta, this.player.gx, this.player.gy);
     }
 
-    // Camera hard-locked to player — player always dead center
+    // Camera hard-locked to player — player always dead center.
+    // Divide by zoom so the offset is in world units, not screen pixels.
     const { x: px, y: py } = this.player.getScreenPos();
     const cam = this.cameras.main;
-    cam.scrollX = px - cam.width / cam.zoom / 2;
-    cam.scrollY = py - cam.height / cam.zoom / 2;
+    cam.scrollX = px - (cam.width / 2) / cam.zoom;
+    cam.scrollY = py - (cam.height / 2) / cam.zoom;
 
     // Catch mini-game
     this.updateCatchGame(delta);
