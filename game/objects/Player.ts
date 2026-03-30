@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { gridToScreen, screenDirToGrid, GRID_SIZE, COL_MOXIE } from '../constants';
 
-const PLAYER_SPEED = 4.5; // grid units per second
+const PLAYER_SPEED = 2.7; // grid units per second
 const MIN_GRID = -0.5;
 const MAX_GRID = GRID_SIZE + 0.5; // scene applies per-screen soft walls
 
