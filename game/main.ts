@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { PaloVerdeLane } from './scenes/PaloVerdeLane';
-import { CANVAS_W, CANVAS_H } from './constants';
 
 export function createGame(parent: string): Phaser.Game {
   return new Phaser.Game({
@@ -8,10 +7,8 @@ export function createGame(parent: string): Phaser.Game {
     parent,
     backgroundColor: '#87CEEB',
     scale: {
-      mode: Phaser.Scale.FIT,
+      mode: Phaser.Scale.RESIZE,
       autoCenter: Phaser.Scale.CENTER_BOTH,
-      width: CANVAS_W,
-      height: CANVAS_H,
     },
     scene: [PaloVerdeLane],
     input: {

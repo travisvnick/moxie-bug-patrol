@@ -43,13 +43,17 @@ export default function Home() {
           background: '#C4613A',
           color: '#fff',
           border: '2px solid #ffffff88',
-          borderRadius: 8,
-          padding: '8px 16px',
-          fontSize: 14,
+          borderRadius: 12,
+          padding: '12px 22px',
+          fontSize: 16,
           fontWeight: 'bold',
           cursor: 'pointer',
           boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
           fontFamily: 'Georgia, serif',
+          minWidth: 80,
+          minHeight: 48,
+          touchAction: 'manipulation',
+          WebkitTapHighlightColor: 'transparent',
         }}
       >
         Bug Book ({caughtBugs.length})

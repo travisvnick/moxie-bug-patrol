@@ -1,23 +1,28 @@
 import Phaser from 'phaser';
 
+// World-space radii. With zoom=2 these appear 2× larger on screen.
 const BASE_RADIUS = 60;
-const THUMB_RADIUS = 26;
-const DEAD_ZONE = 6;
+const THUMB_RADIUS = 28;
+const DEAD_ZONE = 8;   // screen pixels
 
 export class VirtualJoystick {
   private base: Phaser.GameObjects.Graphics;
   private thumb: Phaser.GameObjects.Graphics;
+  /** World-space centre (= screenPos / zoom for scrollFactor=0 objects) */
   private cx: number;
   private cy: number;
+  /** Camera zoom — used to convert between screen-px and world-px */
+  private zoom: number;
   private active = false;
   private activePointerId = -1;
 
   dx = 0;
   dy = 0;
 
-  constructor(private scene: Phaser.Scene, x: number, y: number) {
+  constructor(private scene: Phaser.Scene, x: number, y: number, zoom = 1) {
     this.cx = x;
     this.cy = y;
+    this.zoom = zoom;
 
     this.base = scene.add.graphics();
     this.thumb = scene.add.graphics();
@@ -33,25 +38,29 @@ export class VirtualJoystick {
     scene.input.on('pointerupoutside', this.onUp, this);
   }
 
+  /** Screen-space centre of the joystick */
+  private get screenCx() { return this.cx * this.zoom; }
+  private get screenCy() { return this.cy * this.zoom; }
+
   private drawBase() {
     this.base.clear();
-    this.base.fillStyle(0x000000, 0.18);
+    this.base.fillStyle(0x000000, 0.25);
     this.base.fillCircle(this.cx, this.cy, BASE_RADIUS);
-    this.base.lineStyle(2, 0xffffff, 0.35);
+    this.base.lineStyle(3, 0xffffff, 0.55);
     this.base.strokeCircle(this.cx, this.cy, BASE_RADIUS);
   }
 
-  private drawThumb(x: number, y: number) {
+  private drawThumb(wx: number, wy: number) {
     this.thumb.clear();
-    this.thumb.fillStyle(0xffffff, 0.65);
-    this.thumb.fillCircle(x, y, THUMB_RADIUS);
-    this.thumb.lineStyle(2, 0x2D6A4F, 0.8);
-    this.thumb.strokeCircle(x, y, THUMB_RADIUS);
+    this.thumb.fillStyle(0xffffff, 0.75);
+    this.thumb.fillCircle(wx, wy, THUMB_RADIUS);
+    this.thumb.lineStyle(2, 0x2D6A4F, 0.9);
+    this.thumb.strokeCircle(wx, wy, THUMB_RADIUS);
   }
 
   private onDown(ptr: Phaser.Input.Pointer) {
     if (this.active) return;
-    // Only capture taps on the left half of the screen
+    // ptr.x is in canvas/screen pixels (0..canvasWidth); left half = joystick zone
     if (ptr.x < this.scene.cameras.main.width / 2) {
       this.active = true;
       this.activePointerId = ptr.id;
@@ -73,16 +82,24 @@ export class VirtualJoystick {
     this.drawThumb(this.cx, this.cy);
   }
 
+  /**
+   * ptr.x / ptr.y are screen-space pixels.
+   * this.cx / this.cy are world-space pixels (scrollFactor=0 → screen = world × zoom).
+   * We work in screen space throughout, then convert thumb position back to world space for drawing.
+   */
   private processMove(px: number, py: number) {
-    const rawDx = px - this.cx;
-    const rawDy = py - this.cy;
+    const rawDx = px - this.screenCx;
+    const rawDy = py - this.screenCy;
     const dist = Math.hypot(rawDx, rawDy);
-    const maxDist = BASE_RADIUS - THUMB_RADIUS;
-    const clamped = Math.min(dist, maxDist);
+
+    // Max travel in screen pixels, then convert to world for clamping
+    const maxScreenDist = (BASE_RADIUS - THUMB_RADIUS) * this.zoom;
+    const clamped = Math.min(dist, maxScreenDist);
     const angle = Math.atan2(rawDy, rawDx);
 
-    const tx = this.cx + Math.cos(angle) * clamped;
-    const ty = this.cy + Math.sin(angle) * clamped;
+    // Draw thumb at world position
+    const tx = this.cx + (Math.cos(angle) * clamped) / this.zoom;
+    const ty = this.cy + (Math.sin(angle) * clamped) / this.zoom;
     this.drawThumb(tx, ty);
 
     if (dist > DEAD_ZONE) {

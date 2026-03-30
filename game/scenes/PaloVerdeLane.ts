@@ -33,18 +33,27 @@ export class PaloVerdeLane extends Phaser.Scene {
   private joystick!: VirtualJoystick;
   private keys!: KeySet;
 
+  // Mobile scaling
+  private zoom = 1;
+  private screenW = 0;
+  private screenH = 0;
+
   // Catch mini-game
   private catchRing!: Phaser.GameObjects.Graphics;
   private catchTarget: Bug | null = null;
   private ringRadius = RING_MIN;
   private ringDir = 1;
 
-  // HUD
+  // HUD — stored in world coords (= screenCoord / zoom for scrollFactor=0 objects)
   private promptText!: Phaser.GameObjects.Text;
   private catchBtn!: Phaser.GameObjects.Graphics;
   private catchBtnText!: Phaser.GameObjects.Text;
   private scoreText!: Phaser.GameObjects.Text;
   private caughtCount = 0;
+
+  // Catch button world position (used for drawing and hit-testing)
+  private catchBtnWx = 0;
+  private catchBtnWy = 0;
 
   constructor() {
     super({ key: 'PaloVerdeLane' });
@@ -53,6 +62,18 @@ export class PaloVerdeLane extends Phaser.Scene {
   // ─── Lifecycle ────────────────────────────────────────────────────────────
 
   create() {
+    const W = this.scale.width;
+    const H = this.scale.height;
+    this.screenW = W;
+    this.screenH = H;
+
+    // Zoom in 2× on narrow screens (phones / small tablets)
+    const isMobile = W < 800;
+    this.zoom = isMobile ? 2 : 1;
+    this.cameras.main.setZoom(this.zoom);
+    // Constrain camera scrolling to the world bounds
+    this.cameras.main.setBounds(0, 0, CANVAS_W, CANVAS_H);
+
     // Sky
     const sky = this.add.graphics();
     sky.fillGradientStyle(0x5BA3C9, 0x5BA3C9, 0xB8D4E8, 0xB8D4E8);
@@ -92,45 +113,70 @@ export class PaloVerdeLane extends Phaser.Scene {
       });
     }
 
-    // Virtual joystick (bottom-left)
-    this.joystick = new VirtualJoystick(this, 110, CANVAS_H - 110);
+    // Virtual joystick — positioned 110px from left/bottom in screen space.
+    // scrollFactor=0 objects render at worldPos * zoom in screen px, so divide by zoom.
+    const jsWx = 110 / this.zoom;
+    const jsWy = (H - 110) / this.zoom;
+    this.joystick = new VirtualJoystick(this, jsWx, jsWy, this.zoom);
 
-    // Catch ring (drawn each frame)
+    // Catch ring (drawn each frame in world space)
     this.catchRing = this.add.graphics().setDepth(200);
 
-    // Catch button (bottom-right, touch)
+    // Catch button world position — 100px from right, 110px from bottom in screen space
+    this.catchBtnWx = (W - 100) / this.zoom;
+    this.catchBtnWy = (H - 110) / this.zoom;
+
     this.catchBtn = this.add.graphics().setScrollFactor(0).setDepth(201);
     this.drawCatchButton(false);
 
-    this.catchBtnText = this.add.text(CANVAS_W - 100, CANVAS_H - 110, 'NET!', {
-      fontSize: '22px',
-      fontStyle: 'bold',
-      color: '#ffffff',
-      stroke: '#1A4030',
-      strokeThickness: 3,
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(202).setAlpha(0);
+    this.catchBtnText = this.add.text(
+      this.catchBtnWx,
+      this.catchBtnWy,
+      'NET!',
+      {
+        fontSize: `${Math.round(22 / this.zoom)}px`,
+        fontStyle: 'bold',
+        color: '#ffffff',
+        stroke: '#1A4030',
+        strokeThickness: 3,
+      },
+    ).setOrigin(0.5).setScrollFactor(0).setDepth(202).setAlpha(0);
 
-    // Prompt text (bottom centre)
-    this.promptText = this.add.text(CANVAS_W / 2, CANVAS_H - 30, '', {
-      fontSize: '18px',
-      color: '#ffffff',
-      backgroundColor: '#00000099',
-      padding: { x: 12, y: 5 },
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(202).setAlpha(0);
+    // Prompt text — bottom centre in screen space
+    this.promptText = this.add.text(
+      W / 2 / this.zoom,
+      (H - 30) / this.zoom,
+      '',
+      {
+        fontSize: `${Math.round(18 / this.zoom)}px`,
+        color: '#ffffff',
+        backgroundColor: '#00000099',
+        padding: { x: 12, y: 5 },
+      },
+    ).setOrigin(0.5).setScrollFactor(0).setDepth(202).setAlpha(0);
 
-    // Score / title (top-left)
-    this.scoreText = this.add.text(18, 16, 'Bugs caught: 0', {
-      fontSize: '18px',
-      fontStyle: 'bold',
-      color: '#2D6A4F',
-      backgroundColor: '#ffffffcc',
-      padding: { x: 10, y: 5 },
-    }).setScrollFactor(0).setDepth(202);
+    // Score / title — top-left
+    this.scoreText = this.add.text(
+      18 / this.zoom,
+      16 / this.zoom,
+      'Bugs caught: 0',
+      {
+        fontSize: `${Math.round(18 / this.zoom)}px`,
+        fontStyle: 'bold',
+        color: '#2D6A4F',
+        backgroundColor: '#ffffffcc',
+        padding: { x: 10, y: 5 },
+      },
+    ).setScrollFactor(0).setDepth(202);
 
-    // Touch catch — right half of screen
+    // Touch catch — right half of screen (using actual screen width)
     this.input.on('pointerdown', (ptr: Phaser.Input.Pointer) => {
-      if (ptr.x > CANVAS_W / 2) this.attemptCatch();
+      if (ptr.x > W / 2) this.attemptCatch();
     });
+
+    // Center camera on player start position
+    const startPos = gridToScreen(7, 7);
+    this.cameras.main.centerOn(startPos.x, startPos.y);
   }
 
   update(_time: number, delta: number) {
@@ -139,6 +185,10 @@ export class PaloVerdeLane extends Phaser.Scene {
       if (!bug.caught) bug.update(delta, this.player.gx, this.player.gy);
     }
     this.updateCatchGame(delta);
+
+    // Camera follows player
+    const { x, y } = this.player.getScreenPos();
+    this.cameras.main.centerOn(x, y);
 
     if (this.keys?.space && Phaser.Input.Keyboard.JustDown(this.keys.space)) {
       this.attemptCatch();
@@ -483,11 +533,13 @@ export class PaloVerdeLane extends Phaser.Scene {
 
   private drawCatchButton(active: boolean) {
     this.catchBtn.clear();
-    const bx = CANVAS_W - 100;
-    const by = CANVAS_H - 110;
+    const bx = this.catchBtnWx;
+    const by = this.catchBtnWy;
+    // Radius: 54 world px → 108 screen px at zoom=2 (≥ 80px as required)
+    const r = 54 / this.zoom;
     this.catchBtn.fillStyle(COL_MOXIE, active ? 0.9 : 0.35);
-    this.catchBtn.fillCircle(bx, by, 54);
-    this.catchBtn.lineStyle(3, 0xffffff, active ? 0.85 : 0.3);
-    this.catchBtn.strokeCircle(bx, by, 54);
+    this.catchBtn.fillCircle(bx, by, r);
+    this.catchBtn.lineStyle(3 / this.zoom, 0xffffff, active ? 0.85 : 0.3);
+    this.catchBtn.strokeCircle(bx, by, r);
   }
 }
