@@ -115,6 +115,9 @@ export class PaloVerdeLane extends Phaser.Scene {
   private heldWorldX = 0;
   private heldWorldY = 0;
 
+  // Camera follow proxy (invisible 1px rect the camera tracks)
+  private playerFollowTarget!: Phaser.GameObjects.Rectangle;
+
   // Multi-screen
   private currentScreenId: ScreenId = 'cul-de-sac';
   private envObjects: Phaser.GameObjects.GameObject[] = [];
@@ -227,9 +230,11 @@ export class PaloVerdeLane extends Phaser.Scene {
     // Load first screen (no fade on initial load)
     this.loadScreen('cul-de-sac', 7, 7, false);
 
-    // Center camera on player start
+    // Camera follow: invisible proxy rect tracks the player position each frame
     const startPos = gridToScreen(7, 7);
-    this.cameras.main.centerOn(startPos.x, startPos.y);
+    this.playerFollowTarget = this.add.rectangle(startPos.x, startPos.y, 1, 1).setAlpha(0).setDepth(-100);
+    this.cameras.main.startFollow(this.playerFollowTarget, true, 0.1, 0.1);
+    this.cameras.main.setFollowOffset(0, 0);
   }
 
   update(_time: number, delta: number) {
@@ -260,11 +265,9 @@ export class PaloVerdeLane extends Phaser.Scene {
       if (!bug.caught) bug.update(delta, this.player.gx, this.player.gy);
     }
 
-    // Camera hard-locked to player
+    // Camera follow: update proxy so startFollow tracks the player
     const { x: px, y: py } = this.player.getScreenPos();
-    const cam = this.cameras.main;
-    cam.scrollX = px - (cam.width / 2) / cam.zoom;
-    cam.scrollY = py - (cam.height / 2) / cam.zoom;
+    this.playerFollowTarget.setPosition(px, py);
 
     // Catch mini-game
     this.updateCatchGame(delta);
@@ -536,6 +539,13 @@ export class PaloVerdeLane extends Phaser.Scene {
       this.cameras.main.fadeOut(300, 0, 0, 0);
       this.cameras.main.once('camerafadeoutcomplete', () => {
         this.loadScreen(finalId, finalGx, finalGy, true);
+        // Snap camera to new player position before fade-in
+        const { x: nx, y: ny } = this.player.getScreenPos();
+        this.cameras.main.stopFollow();
+        this.playerFollowTarget.setPosition(nx, ny);
+        this.cameras.main.centerOn(nx, ny);
+        this.cameras.main.startFollow(this.playerFollowTarget, true, 0.1, 0.1);
+        this.cameras.main.setFollowOffset(0, 0);
         this.cameras.main.fadeIn(300, 0, 0, 0);
         this.cameras.main.once('camerafadeincomplete', () => {
           this.transitioning = false;
