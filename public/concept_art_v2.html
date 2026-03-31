@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moxie Bug Patrol - Technician Concepts v2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #F5F0E8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #123250; }
+  .header { background: #0C77D8; color: white; padding: 24px 30px; }
+  .header h1 { font-size: 24px; font-weight: 700; }
+  .header p { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; padding: 30px; max-width: 1400px; margin: 0 auto; }
+  .card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(18,50,80,0.1); }
+  .card-header { background: #123250; color: white; padding: 14px 20px; }
+  .card-header h2 { font-size: 17px; }
+  .card-header span { font-size: 12px; opacity: 0.7; display: block; margin-top: 2px; }
+  .card-body { padding: 24px; display: flex; justify-content: center; align-items: center; min-height: 440px; background: #FAFAF7; }
+  .notes { padding: 16px 20px; background: #F8F9FA; border-top: 1px solid #E6ECEC; font-size: 12px; line-height: 1.6; color: #374D66; }
+  .notes strong { color: #123250; }
+  .label { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-bottom: 6px; }
+  .label-a { background: #0C77D8; color: white; }
+  .label-b { background: #008D1A; color: white; }
+  .label-c { background: #5B47C9; color: white; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Moxie Technician — 3 Style Options</h1>
+  <p>Same Moxie branding, different character proportions. Pick your favorite!</p>
+</div>
+
+<div class="grid">
+
+  <!-- OPTION A: Chibi/Compact -->
+  <div class="card">
+    <div class="card-header">
+      <span class="label label-a">Option A</span>
+      <h2>Chibi Compact</h2>
+      <span>Big head, small body · Cute & expressive · Crossy Road vibes</span>
+    </div>
+    <div class="card-body">
+      <svg width="220" height="360" viewBox="0 0 220 360" xmlns="http://www.w3.org/2000/svg">
+        <!-- Shadow -->
+        <ellipse cx="110" cy="340" rx="50" ry="12" fill="rgba(18,50,80,0.12)"/>
+
+        <!-- LEGS (short & stubby) -->
+        <rect x="80" y="265" width="24" height="55" rx="10" fill="#123250"/>
+        <rect x="116" y="265" width="24" height="55" rx="10" fill="#123250"/>
+        <!-- Shoes -->
+        <ellipse cx="92" cy="318" rx="16" ry="10" fill="#2A2A2A"/>
+        <ellipse cx="128" cy="318" rx="16" ry="10" fill="#2A2A2A"/>
+
+        <!-- BODY (compact torso) -->
+        <rect x="72" y="195" width="76" height="78" rx="16" fill="#7BB8E0"/>
+        <!-- Pocket -->
+        <rect x="82" y="240" width="20" height="16" rx="3" fill="#6AABDA" stroke="#5A9AC8" stroke-width="1"/>
+        <!-- Moxie diamond on chest -->
+        <g transform="translate(96, 208) scale(0.3)">
+          <polygon points="25,0 50,25 25,50 0,25" fill="#0C77D8" stroke="white" stroke-width="2.5"/>
+          <path d="M13,30 L13,19 L25,28 L37,19 L37,30" stroke="white" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        </g>
+
+        <!-- ARMS (short) -->
+        <rect x="52" y="200" width="22" height="52" rx="10" fill="#7BB8E0"/>
+        <circle cx="63" cy="256" r="10" fill="#E8B89D"/>
+        <rect x="146" y="200" width="22" height="52" rx="10" fill="#7BB8E0"/>
+        <circle cx="157" cy="256" r="10" fill="#E8B89D"/>
+
+        <!-- NET in hand -->
+        <line x1="157" y1="244" x2="157" y2="175" stroke="#888" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="157" cy="170" r="16" fill="none" stroke="#0C77D8" stroke-width="2.5"/>
+        <path d="M145,178 Q157,192 169,178" stroke="#BEC9D8" stroke-width="1" fill="none" stroke-dasharray="2,2"/>
+
+        <!-- NECK -->
+        <rect x="100" y="178" width="20" height="20" rx="8" fill="#E8B89D"/>
+
+        <!-- HEAD (oversized!) -->
+        <ellipse cx="110" cy="130" rx="58" ry="60" fill="#E8B89D"/>
+
+        <!-- BIG EYES -->
+        <ellipse cx="90" cy="135" rx="14" ry="16" fill="white"/>
+        <circle cx="94" cy="137" r="8" fill="#123250"/>
+        <circle cx="96" cy="134" r="3" fill="white"/>
+
+        <ellipse cx="130" cy="135" rx="14" ry="16" fill="white"/>
+        <circle cx="134" cy="137" r="8" fill="#123250"/>
+        <circle cx="136" cy="134" r="3" fill="white"/>
+
+        <!-- Eyebrows -->
+        <path d="M76,118 Q90,112 100,116" stroke="#5A3A28" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M120,116 Q130,112 144,118" stroke="#5A3A28" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+        <!-- Nose -->
+        <ellipse cx="110" cy="148" rx="4" ry="3" fill="#D4A186"/>
+
+        <!-- Big smile -->
+        <path d="M92,158 Q110,174 128,158" stroke="#123250" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+        <!-- Ears -->
+        <ellipse cx="52" cy="132" rx="8" ry="10" fill="#E8B89D"/>
+        <ellipse cx="168" cy="132" rx="8" ry="10" fill="#E8B89D"/>
+
+        <!-- MOXIE CAP -->
+        <path d="M55,108 Q110,65 165,108" fill="#1A1A1A"/>
+        <ellipse cx="110" cy="108" rx="60" ry="12" fill="#2A2A2A"/>
+        <!-- Logo on cap -->
+        <g transform="translate(96, 82) scale(0.22)">
+          <polygon points="25,0 50,25 25,50 0,25" fill="#0C77D8"/>
+          <path d="M13,30 L13,19 L25,28 L37,19 L37,30" stroke="white" stroke-width="4" fill="none" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+    <div class="notes">
+      <strong>Vibe:</strong> Adorable, toylike. Head is ~60% of the character. Big expressive eyes that kids connect with immediately. Works great at small game sizes because the face is so readable.<br>
+      <strong>Best for:</strong> Younger kids (6-9), maximum cuteness factor.
+    </div>
+  </div>
+
+  <!-- OPTION B: Athletic/Teen -->
+  <div class="card">
+    <div class="card-header">
+      <span class="label label-b">Option B</span>
+      <h2>Athletic Teen</h2>
+      <span>Taller, action-ready · Confident stance · Sneaky Sasquatch proportions</span>
+    </div>
+    <div class="card-body">
+      <svg width="220" height="360" viewBox="0 0 220 360" xmlns="http://www.w3.org/2000/svg">
+        <!-- Shadow -->
+        <ellipse cx="110" cy="345" rx="45" ry="12" fill="rgba(18,50,80,0.12)"/>
+
+        <!-- LEGS -->
+        <rect x="84" y="245" width="22" height="82" rx="8" fill="#123250"/>
+        <rect x="114" y="245" width="22" height="82" rx="8" fill="#123250"/>
+        <!-- Shoes -->
+        <rect x="78" y="320" width="32" height="14" rx="7" fill="#2A2A2A"/>
+        <rect x="108" y="320" width="32" height="14" rx="7" fill="#2A2A2A"/>
+        <!-- Shoe accent -->
+        <rect x="80" y="322" width="12" height="4" rx="2" fill="#0C77D8"/>
+        <rect x="110" y="322" width="12" height="4" rx="2" fill="#0C77D8"/>
+
+        <!-- BODY -->
+        <path d="M75,160 L75,245 Q75,255 85,255 L135,255 Q145,255 145,245 L145,160 Q145,145 110,145 Q75,145 75,160Z" fill="#7BB8E0"/>
+        <!-- Shirt seam -->
+        <line x1="110" y1="155" x2="110" y2="255" stroke="#6AABDA" stroke-width="1.5"/>
+        <!-- Collar -->
+        <polygon points="95,150 110,165 125,150" fill="#6AABDA"/>
+        <!-- Moxie logo -->
+        <g transform="translate(88, 172) scale(0.35)">
+          <polygon points="25,0 50,25 25,50 0,25" fill="#0C77D8" stroke="white" stroke-width="2"/>
+          <path d="M13,30 L13,19 L25,28 L37,19 L37,30" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </g>
+        <!-- Name badge -->
+        <rect x="114" y="178" width="22" height="12" rx="2" fill="white" stroke="#BEC9D8" stroke-width="0.5"/>
+        <line x1="117" y1="183" x2="133" y2="183" stroke="#374D66" stroke-width="1"/>
+        <line x1="117" y1="186" x2="128" y2="186" stroke="#BEC9D8" stroke-width="0.8"/>
+
+        <!-- BELT with utility pouch -->
+        <rect x="75" y="243" width="70" height="8" rx="2" fill="#374D66"/>
+        <rect x="100" y="241" width="14" height="12" rx="2" fill="#2A2A2A"/>
+        <rect x="130" y="241" width="10" height="10" rx="2" fill="#374D66" stroke="#2A2A2A" stroke-width="1"/>
+
+        <!-- ARMS -->
+        <rect x="55" y="155" width="22" height="65" rx="9" fill="#7BB8E0"/>
+        <circle cx="66" cy="225" r="10" fill="#E8B89D"/>
+
+        <rect x="143" y="155" width="22" height="65" rx="9" fill="#7BB8E0"/>
+        <circle cx="154" cy="225" r="10" fill="#E8B89D"/>
+
+        <!-- NET -->
+        <line x1="154" y1="215" x2="170" y2="120" stroke="#666" stroke-width="3.5" stroke-linecap="round"/>
+        <ellipse cx="173" cy="114" rx="20" ry="16" fill="none" stroke="#0C77D8" stroke-width="2.5"/>
+        <path d="M158,124 Q173,140 188,124" stroke="#BEC9D8" stroke-width="1.2" fill="none" stroke-dasharray="3,2"/>
+
+        <!-- NECK -->
+        <rect x="100" y="132" width="20" height="18" rx="6" fill="#E8B89D"/>
+
+        <!-- HEAD -->
+        <ellipse cx="110" cy="105" rx="40" ry="42" fill="#E8B89D"/>
+
+        <!-- EYES (determined look) -->
+        <ellipse cx="95" cy="108" rx="8" ry="9" fill="white"/>
+        <circle cx="97" cy="109" r="5" fill="#123250"/>
+        <circle cx="98" cy="107" r="2" fill="white"/>
+
+        <ellipse cx="125" cy="108" rx="8" ry="9" fill="white"/>
+        <circle cx="127" cy="109" r="5" fill="#123250"/>
+        <circle cx="128" cy="107" r="2" fill="white"/>
+
+        <!-- Determined eyebrows -->
+        <line x1="86" y1="96" x2="102" y2="98" stroke="#5A3A28" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="118" y1="98" x2="134" y2="96" stroke="#5A3A28" stroke-width="2.5" stroke-linecap="round"/>
+
+        <!-- Nose -->
+        <path d="M108,115 Q110,119 112,115" stroke="#D4A186" stroke-width="2" fill="none"/>
+
+        <!-- Confident grin -->
+        <path d="M98,124 Q110,132 122,124" stroke="#123250" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+        <!-- Ears -->
+        <ellipse cx="70" cy="107" rx="6" ry="8" fill="#E8B89D"/>
+        <ellipse cx="150" cy="107" rx="6" ry="8" fill="#E8B89D"/>
+
+        <!-- CAP (sporty fit) -->
+        <ellipse cx="110" cy="78" rx="44" ry="10" fill="#2A2A2A"/>
+        <path d="M68,78 Q110,48 152,78" fill="#1A1A1A"/>
+        <!-- Cap bill (slightly angled) -->
+        <path d="M68,78 Q62,82 58,80 Q70,88 110,88 Q116,88 110,78" fill="#2A2A2A"/>
+        <!-- Logo -->
+        <g transform="translate(98, 58) scale(0.2)">
+          <polygon points="25,0 50,25 25,50 0,25" fill="#0C77D8"/>
+          <path d="M13,30 L13,19 L25,28 L37,19 L37,30" stroke="white" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+    <div class="notes">
+      <strong>Vibe:</strong> Capable, energetic, ready for action. More realistic proportions but still cartoony. Name badge adds a personal touch. Utility belt with pouches. This is the Sneaky Sasquatch proportion range.<br>
+      <strong>Best for:</strong> Broader age range (7-12), feels like a real character you'd play as.
+    </div>
+  </div>
+
+  <!-- OPTION C: Rounded/Friendly -->
+  <div class="card">
+    <div class="card-header">
+      <span class="label label-c">Option C</span>
+      <h2>Rounded Friendly</h2>
+      <span>Soft shapes, warm feel · Untitled Goose Game style · Maximum approachability</span>
+    </div>
+    <div class="card-body">
+      <svg width="220" height="360" viewBox="0 0 220 360" xmlns="http://www.w3.org/2000/svg">
+        <!-- Shadow -->
+        <ellipse cx="110" cy="340" rx="55" ry="14" fill="rgba(18,50,80,0.12)"/>
+
+        <!-- LEGS (round, soft) -->
+        <ellipse cx="90" cy="305" rx="16" ry="30" fill="#123250"/>
+        <ellipse cx="130" cy="305" rx="16" ry="30" fill="#123250"/>
+        <!-- Round shoes -->
+        <ellipse cx="88" cy="330" rx="18" ry="10" fill="#374D66"/>
+        <ellipse cx="132" cy="330" rx="18" ry="10" fill="#374D66"/>
+
+        <!-- BODY (very round) -->
+        <ellipse cx="110" cy="225" rx="55" ry="60" fill="#7BB8E0"/>
+        <!-- Belly highlight -->
+        <ellipse cx="110" cy="230" rx="38" ry="42" fill="#8CC5E8" opacity="0.5"/>
+        <!-- Moxie logo (centered) -->
+        <g transform="translate(92, 205) scale(0.4)">
+          <polygon points="25,0 50,25 25,50 0,25" fill="#0C77D8" stroke="white" stroke-width="2"/>
+          <path d="M13,30 L13,19 L25,28 L37,19 L37,30" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </g>
+
+        <!-- ARMS (round nubs) -->
+        <ellipse cx="56" cy="220" rx="14" ry="28" fill="#7BB8E0" transform="rotate(-10, 56, 220)"/>
+        <circle cx="52" cy="248" r="10" fill="#E8B89D"/>
+
+        <ellipse cx="164" cy="220" rx="14" ry="28" fill="#7BB8E0" transform="rotate(10, 164, 220)"/>
+        <circle cx="168" cy="248" r="10" fill="#E8B89D"/>
+
+        <!-- NET -->
+        <line x1="168" y1="238" x2="180" y2="145" stroke="#888" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="183" cy="140" r="18" fill="none" stroke="#0C77D8" stroke-width="2.5"/>
+        <path d="M170,150 Q183,168 196,150" stroke="#BEC9D8" stroke-width="1" fill="none" stroke-dasharray="2,2"/>
+
+        <!-- HEAD (round, sits right on body) -->
+        <circle cx="110" cy="150" r="48" fill="#E8B89D"/>
+
+        <!-- EYES (simple dots with shine) -->
+        <circle cx="95" cy="152" r="8" fill="#123250"/>
+        <circle cx="98" cy="149" r="3" fill="white"/>
+
+        <circle cx="125" cy="152" r="8" fill="#123250"/>
+        <circle cx="128" cy="149" r="3" fill="white"/>
+
+        <!-- Rosy cheeks -->
+        <circle cx="82" cy="162" r="8" fill="#F0A0A0" opacity="0.35"/>
+        <circle cx="138" cy="162" r="8" fill="#F0A0A0" opacity="0.35"/>
+
+        <!-- Simple smile -->
+        <path d="M100,168 Q110,178 120,168" stroke="#123250" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+        <!-- CAP -->
+        <path d="M64,130 Q110,88 156,130" fill="#1A1A1A"/>
+        <ellipse cx="110" cy="130" rx="50" ry="10" fill="#2A2A2A"/>
+        <!-- Logo -->
+        <g transform="translate(98, 102) scale(0.22)">
+          <polygon points="25,0 50,25 25,50 0,25" fill="#0C77D8"/>
+          <path d="M13,30 L13,19 L25,28 L37,19 L37,30" stroke="white" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+    <div class="notes">
+      <strong>Vibe:</strong> Soft, huggable, warm. All circles and ellipses — no sharp edges anywhere. Dot eyes with rosy cheeks give an innocent, friendly feel. Think Untitled Goose Game or Fall Guys.<br>
+      <strong>Best for:</strong> Maximum warmth and approachability. The character you want to protect.
+    </div>
+  </div>
+
+</div>
+
+<div style="padding: 16px 30px 30px; max-width: 1400px; margin: 0 auto; text-align: center; color: #374D66; font-size: 13px;">
+  All three use Moxie brand colors: Blue #0C77D8 · Navy #123250 · Light blue uniform shirt · Black Moxie cap with diamond logo
+</div>
+</body>
+</html>
