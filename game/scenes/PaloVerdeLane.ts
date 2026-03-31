@@ -119,10 +119,10 @@ export class PaloVerdeLane extends Phaser.Scene {
       bgPatches.fillEllipse(px, py, Phaser.Math.Between(200, 600), Phaser.Math.Between(100, 300));
     }
 
-    // Sky gradient
+    // Sky gradient — only covers the top portion of the world, not the sides
     const sky = this.add.graphics().setDepth(-8);
     sky.fillGradientStyle(0x0D1B4A, 0x0D1B4A, 0xE8604A, 0xE8604A);
-    sky.fillRect(-20000, -20000, 60000, 19840);
+    sky.fillRect(-20000, -20000, 60000, 23840);
     sky.fillStyle(0xFFB347);
     sky.fillRect(-20000, -200, 60000, 300);
 
