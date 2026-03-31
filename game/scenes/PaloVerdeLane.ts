@@ -76,6 +76,7 @@ export class PaloVerdeLane extends Phaser.Scene {
   // Catch mini-game
   private catchRing!: Phaser.GameObjects.Graphics;
   private catchTarget: Bug | null = null;
+  private catchActive = false;
   private ringRadius = RING_MIN;
   private ringDir = 1;
 
@@ -106,14 +107,14 @@ export class PaloVerdeLane extends Phaser.Scene {
     // ─── Desert background fill (covers entire world, no void ever) ──────
     const desertBg = this.add.graphics().setDepth(-10);
     desertBg.fillStyle(0xE8C99A);
-    desertBg.fillRect(-4000, -4000, 12000, 12000);
+    desertBg.fillRect(-20000, -20000, 60000, 60000);
 
     // Subtle color variation patches in the far desert
     const bgPatches = this.add.graphics().setDepth(-9);
     const patchColors = [0xD4A76A, 0xDDB87A, 0xE0BE85, 0xCFA265];
     for (let i = 0; i < 40; i++) {
-      const px = Phaser.Math.Between(-2000, 6000);
-      const py = Phaser.Math.Between(-2000, 6000);
+      const px = Phaser.Math.Between(-10000, 30000);
+      const py = Phaser.Math.Between(-10000, 30000);
       bgPatches.fillStyle(patchColors[i % patchColors.length], 0.25);
       bgPatches.fillEllipse(px, py, Phaser.Math.Between(200, 600), Phaser.Math.Between(100, 300));
     }
@@ -121,9 +122,9 @@ export class PaloVerdeLane extends Phaser.Scene {
     // Sky gradient
     const sky = this.add.graphics().setDepth(-8);
     sky.fillGradientStyle(0x0D1B4A, 0x0D1B4A, 0xE8604A, 0xE8604A);
-    sky.fillRect(-4000, -4000, 12000, 3840);
+    sky.fillRect(-20000, -20000, 60000, 19840);
     sky.fillStyle(0xFFB347);
-    sky.fillRect(-4000, -200, 12000, 300);
+    sky.fillRect(-20000, -200, 60000, 300);
 
     // ─── Desert objects beyond tile grid ──────────────────────────────────
     this.drawOuterDesertObjects();
@@ -160,10 +161,10 @@ export class PaloVerdeLane extends Phaser.Scene {
     const bottomLeft = gridToScreen(0, GRID_SIZE - 1);
     const bottomRight = gridToScreen(GRID_SIZE - 1, GRID_SIZE - 1);
 
-    const minX = bottomLeft.x - TILE_HW - 200;
-    const maxX = topRight.x + TILE_HW + 200;
-    const minY = topLeft.y - TILE_HH - 300;
-    const maxY = bottomRight.y + TILE_HH + 200;
+    const minX = bottomLeft.x - TILE_HW - 600;
+    const maxX = topRight.x + TILE_HW + 600;
+    const minY = topLeft.y - TILE_HH - 600;
+    const maxY = bottomRight.y + TILE_HH + 600;
 
     this.cameras.main.setBounds(minX, minY, maxX - minX, maxY - minY);
     this.cameras.main.startFollow(
@@ -382,6 +383,7 @@ export class PaloVerdeLane extends Phaser.Scene {
     for (const bug of this.bugs) bug.destroy();
     this.bugs = [];
     this.catchTarget = null;
+    this.catchActive = false;
     this.catchRing.clear();
   }
 
@@ -450,6 +452,7 @@ export class PaloVerdeLane extends Phaser.Scene {
   // ─── Catch mini-game ──────────────────────────────────────────────────────
 
   private updateCatchGame(delta: number) {
+    // Find nearest catchable bug
     let nearest: Bug | null = null;
     let nearestDist = Infinity;
     for (const bug of this.bugs) {
@@ -459,34 +462,54 @@ export class PaloVerdeLane extends Phaser.Scene {
     }
     this.catchTarget = nearest;
 
-    if (nearest) {
-      this.ringRadius += this.ringDir * RING_SPEED * (delta / 1000);
-      if (this.ringRadius >= RING_MAX) { this.ringRadius = RING_MAX; this.ringDir = -1; }
-      if (this.ringRadius <= RING_MIN) { this.ringRadius = RING_MIN; this.ringDir = 1; }
-
-      const inWindow = this.ringRadius <= CATCH_WINDOW_MAX;
-      const { x, y } = nearest.getScreenPos();
-      const oy = y - 10;
-
-      this.catchRing.clear();
-      this.catchRing.fillStyle(0x00FF88, inWindow ? 0.22 : 0.08);
-      this.catchRing.fillCircle(x, oy, CATCH_WINDOW_MAX);
-      this.catchRing.lineStyle(2, 0x00FF88, 0.85);
-      this.catchRing.strokeCircle(x, oy, CATCH_WINDOW_MAX);
-      this.catchRing.lineStyle(5, inWindow ? 0x00FF88 : 0xFFAA00, 0.95);
-      this.catchRing.strokeCircle(x, oy, this.ringRadius);
-      this.catchRing.lineStyle(2, inWindow ? 0x88FFBB : 0xFFCC55, 0.35);
-      this.catchRing.strokeCircle(x, oy, this.ringRadius + 4);
-
-      this.promptText.setText('Tap to catch!').setAlpha(1);
-    } else {
+    // If no catchable bug nearby, deactivate catch mode and hide ring
+    if (!nearest) {
+      this.catchActive = false;
       this.catchRing.clear();
       this.promptText.setAlpha(0);
+      return;
     }
+
+    // Show prompt hint but only draw the ring when catch mode is active
+    this.promptText.setText('Tap to catch!').setAlpha(1);
+
+    if (!this.catchActive) {
+      this.catchRing.clear();
+      return;
+    }
+
+    // Animate the timing ring
+    this.ringRadius += this.ringDir * RING_SPEED * (delta / 1000);
+    if (this.ringRadius >= RING_MAX) { this.ringRadius = RING_MAX; this.ringDir = -1; }
+    if (this.ringRadius <= RING_MIN) { this.ringRadius = RING_MIN; this.ringDir = 1; }
+
+    const inWindow = this.ringRadius <= CATCH_WINDOW_MAX;
+    const { x, y } = nearest.getScreenPos();
+    const oy = y - 10;
+
+    this.catchRing.clear();
+    this.catchRing.fillStyle(0x00FF88, inWindow ? 0.22 : 0.08);
+    this.catchRing.fillCircle(x, oy, CATCH_WINDOW_MAX);
+    this.catchRing.lineStyle(2, 0x00FF88, 0.85);
+    this.catchRing.strokeCircle(x, oy, CATCH_WINDOW_MAX);
+    this.catchRing.lineStyle(5, inWindow ? 0x00FF88 : 0xFFAA00, 0.95);
+    this.catchRing.strokeCircle(x, oy, this.ringRadius);
+    this.catchRing.lineStyle(2, inWindow ? 0x88FFBB : 0xFFCC55, 0.35);
+    this.catchRing.strokeCircle(x, oy, this.ringRadius + 4);
   }
 
   private attemptCatch() {
     if (!this.catchTarget) return;
+
+    // First tap: activate the catch ring
+    if (!this.catchActive) {
+      this.catchActive = true;
+      this.ringRadius = RING_MIN;
+      this.ringDir = 1;
+      return;
+    }
+
+    // Second tap: evaluate timing
     if (this.ringRadius <= CATCH_WINDOW_MAX) {
       this.catchBug(this.catchTarget);
     } else {
@@ -549,10 +572,14 @@ export class PaloVerdeLane extends Phaser.Scene {
     this.ringRadius = RING_MIN;
     this.ringDir = 1;
     this.catchTarget = null;
+    this.catchActive = false;
+    this.catchRing.clear();
   }
 
   private flashMiss() {
     if (this.catchTarget) this.catchTarget.boostFlee();
+    this.catchActive = false;
+    this.catchRing.clear();
 
     const { x, y } = this.player.getScreenPos();
     const miss = this.add.text(x, y - 55, 'MISS!', {
