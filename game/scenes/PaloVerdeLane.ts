@@ -6,7 +6,7 @@ import {
   TILE_HW, TILE_HH,
   GRID_SIZE,
   COL_TERRACOTTA, COL_SAGE, COL_MOXIE,
-  COL_STUCCO, COL_CACTUS,
+  COL_STUCCO, COL_CACTUS, COL_SAND,
 } from '../constants';
 import { emitShowCatchCard } from '../eventBus';
 
@@ -54,7 +54,7 @@ const MAP_BUSHES: [number, number][] = [
   [12, 13], [18, 17], [8, 11],
 ];
 const MAP_BUGS: [number, number][] = [
-  [3, 3], [9, 2], [14, 6], [5, 10], [11, 11],
+  [3, 3], [9, 2], [14, 6], [5, 10], [6, 16],
   [17, 3], [2, 15], [16, 14], [8, 17], [13, 8],
 ];
 const MOXIE_HQ: [number, number] = [10, 5];
@@ -105,8 +105,9 @@ export class PaloVerdeLane extends Phaser.Scene {
 
   create() {
     // ─── Desert background fill (covers entire world, no void ever) ──────
+    // Use the average of tile colors so edges blend seamlessly
     const desertBg = this.add.graphics().setDepth(-10);
-    desertBg.fillStyle(0xE8C99A);
+    desertBg.fillStyle(0xDEB882);
     desertBg.fillRect(-20000, -20000, 60000, 60000);
 
     // Subtle color variation patches in the far desert
@@ -119,24 +120,29 @@ export class PaloVerdeLane extends Phaser.Scene {
       bgPatches.fillEllipse(px, py, Phaser.Math.Between(200, 600), Phaser.Math.Between(100, 300));
     }
 
-    // Sky gradient — only covers the top portion of the world, not the sides
+    // Sky gradient — desert sky blue fading into sand color
     const sky = this.add.graphics().setDepth(-8);
-    sky.fillGradientStyle(0x0D1B4A, 0x0D1B4A, 0xE8604A, 0xE8604A);
-    sky.fillRect(-20000, -20000, 60000, 23840);
-    sky.fillStyle(0xFFB347);
-    sky.fillRect(-20000, -200, 60000, 300);
+    // Upper sky: light desert blue
+    sky.fillGradientStyle(0x87CEEB, 0x87CEEB, 0xC8E0F0, 0xC8E0F0);
+    sky.fillRect(-20000, -20000, 60000, 20000);
+    // Horizon band: sky blue fading to warm sand
+    sky.fillGradientStyle(0xC8E0F0, 0xC8E0F0, 0xDEB882, 0xDEB882);
+    sky.fillRect(-20000, 0, 60000, 3840);
 
-    // ─── Desert objects beyond tile grid ──────────────────────────────────
-    this.drawOuterDesertObjects();
+    // ─── Distant scenery beyond border ─────────────────────────────────
+    this.drawDistantScenery();
 
     // ─── Ground tiles ────────────────────────────────────────────────────
     this.drawGround();
+
+    // ─── Natural border wall around perimeter ────────────────────────────
+    this.drawBorderWall();
 
     // ─── Map objects ─────────────────────────────────────────────────────
     this.loadMap();
 
     // ─── Player ──────────────────────────────────────────────────────────
-    this.player = new Player(this, 10, 10);
+    this.player = new Player(this, 10, 10, (gx, gy) => this.clampToPlayArea(gx, gy));
 
     // Keyboard
     if (this.input.keyboard) {
@@ -323,6 +329,26 @@ export class PaloVerdeLane extends Phaser.Scene {
 
   // ─── Exit zones ────────────────────────────────────────────────────────────
 
+  /** Clamp player position to within the tile grid, allowing passage through exit gaps */
+  private clampToPlayArea(gx: number, gy: number): { gx: number; gy: number } {
+    // Check if position is inside an exit gap — allow free movement there
+    for (const zone of EXIT_ZONES) {
+      if (gx >= zone.minGx - 0.5 && gx <= zone.maxGx + 0.5 &&
+          gy >= zone.minGy - 0.5 && gy <= zone.maxGy + 0.5) {
+        // In an exit gap — allow slightly beyond grid for zone transition trigger
+        return {
+          gx: Phaser.Math.Clamp(gx, -0.5, GRID_SIZE + 0.5),
+          gy: Phaser.Math.Clamp(gy, -0.5, GRID_SIZE + 0.5),
+        };
+      }
+    }
+    // Normal play area — stay within the 20x20 tile grid
+    return {
+      gx: Phaser.Math.Clamp(gx, 0, GRID_SIZE - 1),
+      gy: Phaser.Math.Clamp(gy, 0, GRID_SIZE - 1),
+    };
+  }
+
   private checkExitZones() {
     const pgx = this.player.gx;
     const pgy = this.player.gy;
@@ -353,9 +379,10 @@ export class PaloVerdeLane extends Phaser.Scene {
         this.clearMap();
         this.loadMap();
 
-        // Reposition player to center
+        // Reposition player to center and hide catch prompt
         this.player.gx = 10;
         this.player.gy = 10;
+        this.promptText.setAlpha(0);
 
         // Snap camera
         const { x, y } = this.player.getScreenPos();
@@ -624,45 +651,172 @@ export class PaloVerdeLane extends Phaser.Scene {
     }
   }
 
-  private drawOuterDesertObjects() {
-    const g = this.add.graphics().setDepth(-5);
+  /** Check if a grid position is inside an exit gap */
+  private isExitGap(gx: number, gy: number): boolean {
+    for (const zone of EXIT_ZONES) {
+      // Widen the gap check slightly for natural look
+      if (gx >= zone.minGx - 0.5 && gx <= zone.maxGx + 0.5 &&
+          gy >= zone.minGy - 0.5 && gy <= zone.maxGy + 0.5) {
+        return true;
+      }
+    }
+    return false;
+  }
 
-    // Scattered cacti, rocks, and bushes beyond the grid edges
-    const outerPositions: { x: number; y: number; type: 'cactus' | 'rock' | 'bush' }[] = [];
+  /** Draw a continuous natural border wall around the 20x20 grid perimeter */
+  private drawBorderWall() {
+    const g = this.add.graphics().setDepth(0.5);
 
-    // Generate positions in ring around the grid
-    for (let i = 0; i < 30; i++) {
-      // Pick random grid coords outside the main grid
-      let ogx: number, ogy: number;
-      const side = i % 4;
-      if (side === 0) { ogx = Phaser.Math.Between(-6, -1); ogy = Phaser.Math.Between(-3, GRID_SIZE + 3); }
-      else if (side === 1) { ogx = Phaser.Math.Between(GRID_SIZE, GRID_SIZE + 6); ogy = Phaser.Math.Between(-3, GRID_SIZE + 3); }
-      else if (side === 2) { ogx = Phaser.Math.Between(-3, GRID_SIZE + 3); ogy = Phaser.Math.Between(-6, -1); }
-      else { ogx = Phaser.Math.Between(-3, GRID_SIZE + 3); ogy = Phaser.Math.Between(GRID_SIZE, GRID_SIZE + 6); }
+    // Walk all four edges of the grid placing border objects
+    // Each edge: place rocks, cacti clusters, low walls at each tile along the boundary
+    const borderPositions: { gx: number; gy: number; type: string }[] = [];
 
-      const { x, y } = gridToScreen(ogx, ogy);
-      const types: ('cactus' | 'rock' | 'bush')[] = ['cactus', 'rock', 'bush'];
-      outerPositions.push({ x, y, type: types[i % 3] });
+    // Generate border positions along all 4 edges, 2 tiles thick
+    for (let i = -1; i <= GRID_SIZE; i++) {
+      // Top edge (gy = -1 and -2)
+      for (const offset of [-1, -2]) {
+        borderPositions.push({ gx: i, gy: offset, type: this.borderType(i, offset) });
+      }
+      // Bottom edge (gy = GRID_SIZE and GRID_SIZE+1)
+      for (const offset of [GRID_SIZE, GRID_SIZE + 1]) {
+        borderPositions.push({ gx: i, gy: offset, type: this.borderType(i, offset) });
+      }
+      // Left edge (gx = -1 and -2)
+      for (const offset of [-1, -2]) {
+        borderPositions.push({ gx: offset, gy: i, type: this.borderType(offset, i) });
+      }
+      // Right edge (gx = GRID_SIZE and GRID_SIZE+1)
+      for (const offset of [GRID_SIZE, GRID_SIZE + 1]) {
+        borderPositions.push({ gx: offset, gy: i, type: this.borderType(offset, i) });
+      }
     }
 
-    for (const obj of outerPositions) {
-      if (obj.type === 'cactus') {
-        // Simple saguaro silhouette
-        g.fillStyle(COL_CACTUS, 0.6);
-        g.fillRoundedRect(obj.x - 5, obj.y - 50, 10, 50, 5);
-        g.fillRoundedRect(obj.x - 18, obj.y - 35, 8, 18, 4);
-        g.fillRoundedRect(obj.x + 10, obj.y - 30, 8, 15, 4);
-        g.fillCircle(obj.x, obj.y - 50, 5);
-      } else if (obj.type === 'rock') {
-        g.fillStyle(0xB8A080, 0.5);
-        g.fillEllipse(obj.x, obj.y, 20, 12);
-        g.fillStyle(0xA89070, 0.4);
-        g.fillEllipse(obj.x + 8, obj.y - 3, 14, 10);
+    for (const pos of borderPositions) {
+      // Skip exit gaps — leave dirt path through
+      if (this.isExitGap(pos.gx, pos.gy)) continue;
+
+      const { x, y } = gridToScreen(pos.gx, pos.gy);
+      const hash = ((pos.gx * 7 + pos.gy * 13) & 0x7FFFFFFF) % 10;
+
+      if (pos.type === 'rock') {
+        // Irregular rock formation
+        const rScale = 0.8 + (hash % 4) * 0.15;
+        g.fillStyle(0xA0876A);
+        g.fillEllipse(x, y - 6 * rScale, 30 * rScale, 18 * rScale);
+        g.fillStyle(0x8E7860);
+        g.fillEllipse(x + 8 * rScale, y - 10 * rScale, 22 * rScale, 14 * rScale);
+        g.fillStyle(0xB8A080);
+        g.fillEllipse(x - 6 * rScale, y - 3 * rScale, 16 * rScale, 10 * rScale);
+        // Highlight
+        g.fillStyle(0xC8B898, 0.5);
+        g.fillEllipse(x - 2, y - 12 * rScale, 8 * rScale, 4 * rScale);
+      } else if (pos.type === 'cactus') {
+        // Barrel cactus cluster
+        const s = 0.7 + (hash % 3) * 0.2;
+        g.fillStyle(0x4A7C59);
+        g.fillCircle(x, y - 10 * s, 10 * s);
+        g.fillCircle(x + 12 * s, y - 7 * s, 7 * s);
+        // Spines
+        g.fillStyle(0xE8D8B0);
+        for (let sp = 0; sp < 5; sp++) {
+          const angle = (sp / 5) * Math.PI * 2;
+          g.fillCircle(x + Math.cos(angle) * 8 * s, y - 10 * s + Math.sin(angle) * 8 * s, 1);
+        }
+        // Shadow
+        g.fillStyle(0x000000, 0.1);
+        g.fillEllipse(x + 4, y + 2, 24 * s, 8 * s);
       } else {
-        g.fillStyle(0x6B8E50, 0.5);
-        g.fillCircle(obj.x, obj.y - 6, 10);
-        g.fillCircle(obj.x + 7, obj.y - 4, 8);
-        g.fillCircle(obj.x - 5, obj.y - 3, 7);
+        // Low desert wall / mesquite bush
+        g.fillStyle(0x7A6E50);
+        g.fillRoundedRect(x - 20, y - 12, 40, 14, 3);
+        g.fillStyle(0x8A7E60, 0.8);
+        g.fillRoundedRect(x - 16, y - 18, 32, 10, 3);
+        // Bush on top
+        g.fillStyle(0x5A7A40, 0.7);
+        g.fillCircle(x - 8, y - 20, 8);
+        g.fillCircle(x + 6, y - 18, 7);
+        g.fillCircle(x, y - 24, 6);
+      }
+    }
+  }
+
+  /** Deterministic border object type based on position */
+  private borderType(gx: number, gy: number): string {
+    const hash = ((gx * 31 + gy * 17) & 0x7FFFFFFF) % 6;
+    if (hash < 3) return 'rock';
+    if (hash < 5) return 'cactus';
+    return 'wall';
+  }
+
+  /** Draw distant desert scenery beyond the border */
+  private drawDistantScenery() {
+    const g = this.add.graphics().setDepth(-5);
+
+    // Mesa / mountain silhouettes on the horizon (far away, faded)
+    const mesaPositions = [
+      { gx: -10, gy: -8, w: 300, h: 80 },
+      { gx: 25, gy: -6, w: 200, h: 60 },
+      { gx: -8, gy: 28, w: 250, h: 70 },
+      { gx: 30, gy: 25, w: 280, h: 75 },
+      { gx: 10, gy: -12, w: 350, h: 90 },
+      { gx: -12, gy: 10, w: 220, h: 65 },
+      { gx: 32, gy: 10, w: 240, h: 70 },
+      { gx: 10, gy: 32, w: 300, h: 80 },
+    ];
+
+    for (const mesa of mesaPositions) {
+      const { x, y } = gridToScreen(mesa.gx, mesa.gy);
+      // Flat-topped mesa shape
+      g.fillStyle(0xC4A07A, 0.35);
+      g.beginPath();
+      g.moveTo(x - mesa.w / 2, y);
+      g.lineTo(x - mesa.w * 0.3, y - mesa.h);
+      g.lineTo(x + mesa.w * 0.3, y - mesa.h);
+      g.lineTo(x + mesa.w / 2, y);
+      g.closePath();
+      g.fillPath();
+      // Lighter top edge highlight
+      g.lineStyle(2, 0xD4B896, 0.3);
+      g.lineBetween(x - mesa.w * 0.3, y - mesa.h, x + mesa.w * 0.3, y - mesa.h);
+    }
+
+    // Distant faded saguaros scattered far outside
+    for (let i = 0; i < 40; i++) {
+      let ogx: number, ogy: number;
+      const side = i % 4;
+      if (side === 0) { ogx = Phaser.Math.Between(-12, -4); ogy = Phaser.Math.Between(-5, GRID_SIZE + 5); }
+      else if (side === 1) { ogx = Phaser.Math.Between(GRID_SIZE + 3, GRID_SIZE + 12); ogy = Phaser.Math.Between(-5, GRID_SIZE + 5); }
+      else if (side === 2) { ogx = Phaser.Math.Between(-5, GRID_SIZE + 5); ogy = Phaser.Math.Between(-12, -4); }
+      else { ogx = Phaser.Math.Between(-5, GRID_SIZE + 5); ogy = Phaser.Math.Between(GRID_SIZE + 3, GRID_SIZE + 12); }
+
+      const { x, y } = gridToScreen(ogx, ogy);
+      // Distance-based fade: further = more faded
+      const dist = Math.max(
+        Math.max(0, -ogx), Math.max(0, ogx - GRID_SIZE),
+        Math.max(0, -ogy), Math.max(0, ogy - GRID_SIZE),
+      );
+      const alpha = Math.max(0.15, 0.5 - dist * 0.03);
+      const hash = (i * 7) % 3;
+
+      if (hash === 0) {
+        // Distant saguaro
+        g.fillStyle(COL_CACTUS, alpha);
+        const h = 30 + (i % 5) * 8;
+        g.fillRoundedRect(x - 4, y - h, 8, h, 4);
+        g.fillRoundedRect(x - 14, y - h * 0.6, 6, 14, 3);
+        g.fillRoundedRect(x + 8, y - h * 0.5, 6, 12, 3);
+        g.fillCircle(x, y - h, 4);
+      } else if (hash === 1) {
+        // Distant rock
+        g.fillStyle(0xB8A080, alpha);
+        g.fillEllipse(x, y, 18, 10);
+        g.fillStyle(0xA89070, alpha * 0.8);
+        g.fillEllipse(x + 6, y - 2, 12, 8);
+      } else {
+        // Distant bush
+        g.fillStyle(0x6B8E50, alpha);
+        g.fillCircle(x, y - 5, 8);
+        g.fillCircle(x + 6, y - 3, 6);
       }
     }
   }

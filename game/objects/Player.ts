@@ -2,12 +2,13 @@ import Phaser from 'phaser';
 import { gridToScreen, screenDirToGrid, GRID_SIZE, COL_MOXIE } from '../constants';
 
 const PLAYER_SPEED = 2.7; // grid units per second
-const MIN_GRID = -0.5;
-const MAX_GRID = GRID_SIZE + 0.5; // scene applies per-screen soft walls
+
+export type BoundaryClamp = (gx: number, gy: number) => { gx: number; gy: number };
 
 export class Player {
   private gfx: Phaser.GameObjects.Graphics;
   private shadow: Phaser.GameObjects.Graphics;
+  private clampFn: BoundaryClamp;
 
   gx: number;
   gy: number;
@@ -20,9 +21,13 @@ export class Player {
   private leanDir = 0; // screen-space horizontal lean, -1 to 1
   private isWalking = false;
 
-  constructor(private scene: Phaser.Scene, gx: number, gy: number) {
+  constructor(private scene: Phaser.Scene, gx: number, gy: number, clampFn?: BoundaryClamp) {
     this.gx = gx;
     this.gy = gy;
+    this.clampFn = clampFn ?? ((gx, gy) => ({
+      gx: Phaser.Math.Clamp(gx, -0.5, GRID_SIZE + 0.5),
+      gy: Phaser.Math.Clamp(gy, -0.5, GRID_SIZE + 0.5),
+    }));
     this.shadow = scene.add.graphics();
     this.gfx = scene.add.graphics();
     this.redraw();
@@ -35,8 +40,9 @@ export class Player {
   move(sdx: number, sdy: number, delta: number) {
     const { gx: dgx, gy: dgy } = screenDirToGrid(sdx, sdy);
     const speed = PLAYER_SPEED * (delta / 1000);
-    this.gx = Phaser.Math.Clamp(this.gx + dgx * speed, MIN_GRID, MAX_GRID);
-    this.gy = Phaser.Math.Clamp(this.gy + dgy * speed, MIN_GRID, MAX_GRID);
+    const clamped = this.clampFn(this.gx + dgx * speed, this.gy + dgy * speed);
+    this.gx = clamped.gx;
+    this.gy = clamped.gy;
     this.leanDir = sdx;
     this.walkBob += delta * 0.008;
     this.isWalking = true;
@@ -45,8 +51,9 @@ export class Player {
 
   /** Set a tap/hold destination in grid coords. */
   moveTo(gx: number, gy: number) {
-    this.moveTargetGx = Phaser.Math.Clamp(gx, MIN_GRID, MAX_GRID);
-    this.moveTargetGy = Phaser.Math.Clamp(gy, MIN_GRID, MAX_GRID);
+    const clamped = this.clampFn(gx, gy);
+    this.moveTargetGx = clamped.gx;
+    this.moveTargetGy = clamped.gy;
   }
 
   /** Cancel movement (e.g. when keyboard takes over). */
@@ -77,10 +84,11 @@ export class Player {
     }
     const speed = PLAYER_SPEED * (delta / 1000);
     const step = Math.min(speed, dist);
-    this.gx += (dx / dist) * step;
-    this.gy += (dy / dist) * step;
-    this.gx = Phaser.Math.Clamp(this.gx, MIN_GRID, MAX_GRID);
-    this.gy = Phaser.Math.Clamp(this.gy, MIN_GRID, MAX_GRID);
+    const newGx = this.gx + (dx / dist) * step;
+    const newGy = this.gy + (dy / dist) * step;
+    const clamped = this.clampFn(newGx, newGy);
+    this.gx = clamped.gx;
+    this.gy = clamped.gy;
     // Lean based on isometric screen-x direction: proportional to (dx - dy)
     this.leanDir = Phaser.Math.Clamp((dx - dy) / dist, -1, 1);
     this.walkBob += delta * 0.008;
