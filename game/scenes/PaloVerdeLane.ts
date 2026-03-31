@@ -6,11 +6,12 @@ import {
   TILE_HW, TILE_HH,
   GRID_SIZE,
   COL_TERRACOTTA, COL_SAGE, COL_MOXIE,
-  COL_STUCCO, COL_CACTUS, COL_SAND,
+  COL_STUCCO, COL_CACTUS,
 } from '../constants';
 import { emitShowCatchCard } from '../eventBus';
 
-const CATCH_RADIUS = 1.6;
+const CATCH_ACTIVATE_RADIUS = 2.0;  // grid tiles — how close player must be to start catch
+const CATCH_CANCEL_RADIUS = 3.0;    // grid tiles — ring cancels if bug flees this far
 const RING_MIN = 8;
 const RING_MAX = 44;
 const RING_SPEED = 60;
@@ -172,10 +173,11 @@ export class PaloVerdeLane extends Phaser.Scene {
     const maxY = bottomRight.y + TILE_HH + 600;
 
     this.cameras.main.setBounds(minX, minY, maxX - minX, maxY - minY);
-    this.cameras.main.startFollow(
-      { x: 0, y: 0 } as Phaser.GameObjects.GameObject & { x: number; y: number },
-      false, 0.1, 0.1,
-    );
+
+    // Snap camera to player on first frame
+    const startPos = gridToScreen(10, 10);
+    this.cameras.main.scrollX = startPos.x - (this.scale.width / this.zoom) / 2;
+    this.cameras.main.scrollY = startPos.y - (this.scale.height / this.zoom) / 2;
 
     const sw = this.scale.width / this.zoom;
     const sh = this.scale.height / this.zoom;
@@ -258,8 +260,8 @@ export class PaloVerdeLane extends Phaser.Scene {
     // Keyboard movement
     const keyboardMoved = this.handleKeyboard(delta);
 
-    // Hold-to-move
-    if (this.pointerHeld && !this.catchTarget && !keyboardMoved) {
+    // Hold-to-move (disabled while catch ring is active)
+    if (this.pointerHeld && !this.catchActive && !keyboardMoved) {
       const { gx, gy } = screenToGrid(this.heldWorldX, this.heldWorldY);
       this.player.moveTo(gx, gy);
     }
@@ -295,31 +297,44 @@ export class PaloVerdeLane extends Phaser.Scene {
       bug.update(delta, this.player.gx, this.player.gy);
     }
 
-    // Camera follow target — update the invisible follow target
+    // Camera: center on player, clamped to world bounds
     const { x: px, y: py } = this.player.getScreenPos();
-    const followTarget = this.cameras.main.deadzone ? null : null;
-    void followTarget;
-    // Update the camera follow target position
-    (this.cameras.main as Phaser.Cameras.Scene2D.Camera).scrollX = px - (this.cameras.main.width / 2) / this.cameras.main.zoom;
-    (this.cameras.main as Phaser.Cameras.Scene2D.Camera).scrollY = py - (this.cameras.main.height / 2) / this.cameras.main.zoom;
-
-    // Clamp camera to bounds manually (setBounds handles this but we override scroll)
-    const bounds = this.cameras.main.getBounds();
-    const camW = this.cameras.main.width / this.cameras.main.zoom;
-    const camH = this.cameras.main.height / this.cameras.main.zoom;
-    this.cameras.main.scrollX = Phaser.Math.Clamp(
-      this.cameras.main.scrollX, bounds.x, bounds.x + bounds.width - camW,
+    const cam = this.cameras.main;
+    const camW = cam.width / cam.zoom;
+    const camH = cam.height / cam.zoom;
+    const bounds = cam.getBounds();
+    cam.scrollX = Phaser.Math.Clamp(
+      px - camW / 2, bounds.x, bounds.x + bounds.width - camW,
     );
-    this.cameras.main.scrollY = Phaser.Math.Clamp(
-      this.cameras.main.scrollY, bounds.y, bounds.y + bounds.height - camH,
+    cam.scrollY = Phaser.Math.Clamp(
+      py - camH / 2, bounds.y, bounds.y + bounds.height - camH,
     );
 
     // Catch mini-game
     this.updateCatchGame(delta);
 
-    // SPACE key catch
+    // SPACE key catch — activate or evaluate
     if (this.keys?.space && Phaser.Input.Keyboard.JustDown(this.keys.space)) {
-      this.attemptCatch();
+      if (this.catchActive && this.catchTarget) {
+        this.attemptCatch();
+      } else {
+        // Find nearest revealed bug to activate catch on
+        let nearest: Bug | null = null;
+        let nearestDist = Infinity;
+        for (const bug of this.bugs) {
+          if (bug.caught || bug.hidden) continue;
+          const d = Math.hypot(bug.gx - this.player.gx, bug.gy - this.player.gy);
+          if (d < CATCH_ACTIVATE_RADIUS && d < nearestDist) { nearest = bug; nearestDist = d; }
+        }
+        if (nearest) {
+          this.catchTarget = nearest;
+          this.catchActive = true;
+          this.ringRadius = RING_MAX;
+          this.ringDir = -1;
+          this.pointerHeld = false;
+          this.player.stopMove();
+        }
+      }
     }
 
     // Check exit zones
@@ -454,22 +469,33 @@ export class PaloVerdeLane extends Phaser.Scene {
 
   private handlePointerDown(ptr: Phaser.Input.Pointer) {
     if (this.transitioning) return;
-    if (this.catchActive) { this.attemptCatch(); return; }
 
-    // Tap near a revealed bug to start the catch mini-game.
-    // Use generous grid-space distance (~2 tiles) so players don't have to pixel-perfect tap.
-    const tapGrid = screenToGrid(ptr.worldX, ptr.worldY);
+    // If catch ring is already active, this tap evaluates the timing
+    if (this.catchActive && this.catchTarget) {
+      this.attemptCatch();
+      return;
+    }
+
+    // Check if tapping near a revealed bug within catch range to START catch ring
     for (const bug of this.bugs) {
       if (bug.caught || bug.hidden) continue;
-      const bugTapDist = Math.hypot(bug.gx - tapGrid.gx, bug.gy - tapGrid.gy);
-      const playerBugDist = Math.hypot(bug.gx - this.player.gx, bug.gy - this.player.gy);
-      if (bugTapDist < 2.0 || playerBugDist < CATCH_RADIUS) {
-        this.catchTarget = bug;
-        this.attemptCatch();
-        return;
+      const distToPlayer = Math.hypot(bug.gx - this.player.gx, bug.gy - this.player.gy);
+      if (distToPlayer < CATCH_ACTIVATE_RADIUS) {
+        const { x: bx, y: by } = bug.getScreenPos();
+        // Accept taps anywhere reasonably near the bug on screen
+        if (Math.hypot(ptr.worldX - bx, ptr.worldY - by) < 60) {
+          this.catchTarget = bug;
+          this.catchActive = true;
+          this.ringRadius = RING_MAX;
+          this.ringDir = -1;
+          this.pointerHeld = false;
+          this.player.stopMove();
+          return;
+        }
       }
     }
 
+    // Normal movement
     const { gx, gy } = screenToGrid(ptr.worldX, ptr.worldY);
     this.player.moveTo(gx, gy);
     this.pointerHeld = true;
@@ -480,69 +506,57 @@ export class PaloVerdeLane extends Phaser.Scene {
   // ─── Catch mini-game ──────────────────────────────────────────────────────
 
   private updateCatchGame(delta: number) {
-    // While the catch ring is active, keep the target locked even if the bug
-    // has run out of CATCH_RADIUS — don't reset the mini-game mid-attempt.
-    if (!this.catchActive) {
-      // Find nearest catchable bug
-      let nearest: Bug | null = null;
-      let nearestDist = Infinity;
-      for (const bug of this.bugs) {
-        if (bug.caught || bug.hidden) continue;
-        const d = Math.hypot(bug.gx - this.player.gx, bug.gy - this.player.gy);
-        if (d < CATCH_RADIUS && d < nearestDist) { nearest = bug; nearestDist = d; }
+    // If catch ring is active, track the locked target bug
+    if (this.catchActive && this.catchTarget) {
+      // Cancel if bug was caught or fled too far
+      const d = Math.hypot(this.catchTarget.gx - this.player.gx, this.catchTarget.gy - this.player.gy);
+      if (this.catchTarget.caught || d > CATCH_CANCEL_RADIUS) {
+        this.catchActive = false;
+        this.catchTarget = null;
+        this.catchRing.clear();
+        this.promptText.setAlpha(0);
+        return;
       }
-      this.catchTarget = nearest;
-    }
 
-    // Target gone (caught or no longer exists) — deactivate
-    if (!this.catchTarget || this.catchTarget.caught) {
-      this.catchActive = false;
-      this.catchTarget = null;
+      // Animate the timing ring (pulses large → small → large)
+      this.ringRadius += this.ringDir * RING_SPEED * (delta / 1000);
+      if (this.ringRadius >= RING_MAX) { this.ringRadius = RING_MAX; this.ringDir = -1; }
+      if (this.ringRadius <= RING_MIN) { this.ringRadius = RING_MIN; this.ringDir = 1; }
+
+      const inWindow = this.ringRadius <= CATCH_WINDOW_MAX;
+      const { x, y } = this.catchTarget.getScreenPos();
+      const oy = y - 10;
+
       this.catchRing.clear();
-      this.promptText.setAlpha(0);
+      this.catchRing.fillStyle(0x00FF88, inWindow ? 0.22 : 0.08);
+      this.catchRing.fillCircle(x, oy, CATCH_WINDOW_MAX);
+      this.catchRing.lineStyle(2, 0x00FF88, 0.85);
+      this.catchRing.strokeCircle(x, oy, CATCH_WINDOW_MAX);
+      this.catchRing.lineStyle(5, inWindow ? 0x00FF88 : 0xFFAA00, 0.95);
+      this.catchRing.strokeCircle(x, oy, this.ringRadius);
+      this.catchRing.lineStyle(2, inWindow ? 0x88FFBB : 0xFFCC55, 0.35);
+      this.catchRing.strokeCircle(x, oy, this.ringRadius + 4);
+
+      this.promptText.setText('Tap to catch!').setAlpha(1);
       return;
     }
 
-    // Show prompt hint
-    this.promptText.setText('Tap to catch!').setAlpha(1);
-
-    if (!this.catchActive) {
-      this.catchRing.clear();
-      return;
-    }
-
-    // Animate the timing ring
-    this.ringRadius += this.ringDir * RING_SPEED * (delta / 1000);
-    if (this.ringRadius >= RING_MAX) { this.ringRadius = RING_MAX; this.ringDir = -1; }
-    if (this.ringRadius <= RING_MIN) { this.ringRadius = RING_MIN; this.ringDir = 1; }
-
-    const inWindow = this.ringRadius <= CATCH_WINDOW_MAX;
-    const { x, y } = this.catchTarget.getScreenPos();
-    const oy = y - 10;
-
+    // Not in catch mode — show hint if any revealed bug is nearby
     this.catchRing.clear();
-    this.catchRing.fillStyle(0x00FF88, inWindow ? 0.22 : 0.08);
-    this.catchRing.fillCircle(x, oy, CATCH_WINDOW_MAX);
-    this.catchRing.lineStyle(2, 0x00FF88, 0.85);
-    this.catchRing.strokeCircle(x, oy, CATCH_WINDOW_MAX);
-    this.catchRing.lineStyle(5, inWindow ? 0x00FF88 : 0xFFAA00, 0.95);
-    this.catchRing.strokeCircle(x, oy, this.ringRadius);
-    this.catchRing.lineStyle(2, inWindow ? 0x88FFBB : 0xFFCC55, 0.35);
-    this.catchRing.strokeCircle(x, oy, this.ringRadius + 4);
+    let anyNear = false;
+    for (const bug of this.bugs) {
+      if (bug.caught || bug.hidden) continue;
+      const d = Math.hypot(bug.gx - this.player.gx, bug.gy - this.player.gy);
+      if (d < CATCH_ACTIVATE_RADIUS) { anyNear = true; break; }
+    }
+    this.promptText.setAlpha(anyNear ? 1 : 0);
+    if (anyNear) this.promptText.setText('Tap to catch!');
   }
 
   private attemptCatch() {
-    if (!this.catchTarget) return;
+    if (!this.catchTarget || !this.catchActive) return;
 
-    // First tap: activate the catch ring
-    if (!this.catchActive) {
-      this.catchActive = true;
-      this.ringRadius = RING_MIN;
-      this.ringDir = 1;
-      return;
-    }
-
-    // Second tap: evaluate timing
+    // Evaluate timing — green zone = catch, outside = miss
     if (this.ringRadius <= CATCH_WINDOW_MAX) {
       this.catchBug(this.catchTarget);
     } else {

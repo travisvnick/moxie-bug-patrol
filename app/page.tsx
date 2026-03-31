@@ -11,7 +11,7 @@ const GameCanvas = dynamic(() => import('@/components/GameCanvas').then(m => m.G
     <div style={{
       width: '100vw', height: '100vh',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#87CEEB', color: '#2D6A4F', fontSize: 24, fontWeight: 'bold',
+      background: '#DEB882', color: '#2D6A4F', fontSize: 24, fontWeight: 'bold',
     }}>
       Loading Palo Verde Lane...
     </div>
