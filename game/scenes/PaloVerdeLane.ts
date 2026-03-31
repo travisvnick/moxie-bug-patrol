@@ -15,7 +15,6 @@ const RING_MIN = 8;
 const RING_MAX = 44;
 const RING_SPEED = 60;
 const CATCH_WINDOW_MAX = 22;
-const BUG_TAP_RADIUS = 24;
 
 const SAND_LIGHT = [0xE8C99A, 0xEBCFA0, 0xE4C496, 0xEDD6A8, 0xE6CB97];
 const SAND_DARK  = [0xD4A76A, 0xD8AB70, 0xCFA265, 0xD6A96C, 0xD0A468];
@@ -455,17 +454,19 @@ export class PaloVerdeLane extends Phaser.Scene {
 
   private handlePointerDown(ptr: Phaser.Input.Pointer) {
     if (this.transitioning) return;
-    if (this.catchTarget) { this.attemptCatch(); return; }
+    if (this.catchActive) { this.attemptCatch(); return; }
 
+    // Tap near a revealed bug to start the catch mini-game.
+    // Use generous grid-space distance (~2 tiles) so players don't have to pixel-perfect tap.
+    const tapGrid = screenToGrid(ptr.worldX, ptr.worldY);
     for (const bug of this.bugs) {
       if (bug.caught || bug.hidden) continue;
-      const distToPlayer = Math.hypot(bug.gx - this.player.gx, bug.gy - this.player.gy);
-      if (distToPlayer < CATCH_RADIUS) {
-        const { x: bx, y: by } = bug.getScreenPos();
-        if (Math.hypot(ptr.worldX - bx, ptr.worldY - by) < BUG_TAP_RADIUS) {
-          this.attemptCatch();
-          return;
-        }
+      const bugTapDist = Math.hypot(bug.gx - tapGrid.gx, bug.gy - tapGrid.gy);
+      const playerBugDist = Math.hypot(bug.gx - this.player.gx, bug.gy - this.player.gy);
+      if (bugTapDist < 2.0 || playerBugDist < CATCH_RADIUS) {
+        this.catchTarget = bug;
+        this.attemptCatch();
+        return;
       }
     }
 
@@ -479,25 +480,30 @@ export class PaloVerdeLane extends Phaser.Scene {
   // ─── Catch mini-game ──────────────────────────────────────────────────────
 
   private updateCatchGame(delta: number) {
-    // Find nearest catchable bug
-    let nearest: Bug | null = null;
-    let nearestDist = Infinity;
-    for (const bug of this.bugs) {
-      if (bug.caught || bug.hidden) continue;
-      const d = Math.hypot(bug.gx - this.player.gx, bug.gy - this.player.gy);
-      if (d < CATCH_RADIUS && d < nearestDist) { nearest = bug; nearestDist = d; }
+    // While the catch ring is active, keep the target locked even if the bug
+    // has run out of CATCH_RADIUS — don't reset the mini-game mid-attempt.
+    if (!this.catchActive) {
+      // Find nearest catchable bug
+      let nearest: Bug | null = null;
+      let nearestDist = Infinity;
+      for (const bug of this.bugs) {
+        if (bug.caught || bug.hidden) continue;
+        const d = Math.hypot(bug.gx - this.player.gx, bug.gy - this.player.gy);
+        if (d < CATCH_RADIUS && d < nearestDist) { nearest = bug; nearestDist = d; }
+      }
+      this.catchTarget = nearest;
     }
-    this.catchTarget = nearest;
 
-    // If no catchable bug nearby, deactivate catch mode and hide ring
-    if (!nearest) {
+    // Target gone (caught or no longer exists) — deactivate
+    if (!this.catchTarget || this.catchTarget.caught) {
       this.catchActive = false;
+      this.catchTarget = null;
       this.catchRing.clear();
       this.promptText.setAlpha(0);
       return;
     }
 
-    // Show prompt hint but only draw the ring when catch mode is active
+    // Show prompt hint
     this.promptText.setText('Tap to catch!').setAlpha(1);
 
     if (!this.catchActive) {
@@ -511,7 +517,7 @@ export class PaloVerdeLane extends Phaser.Scene {
     if (this.ringRadius <= RING_MIN) { this.ringRadius = RING_MIN; this.ringDir = 1; }
 
     const inWindow = this.ringRadius <= CATCH_WINDOW_MAX;
-    const { x, y } = nearest.getScreenPos();
+    const { x, y } = this.catchTarget.getScreenPos();
     const oy = y - 10;
 
     this.catchRing.clear();
