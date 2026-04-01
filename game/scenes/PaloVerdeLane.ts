@@ -37,6 +37,10 @@ export default class PaloVerdeLane extends Phaser.Scene {
   private playerGX: number = PLAYER_START_X;
   private playerGY: number = PLAYER_START_Y;
 
+  // Named handlers so we can remove them on shutdown
+  private readonly onBugCaught       = () => { this.scene.pause(); };
+  private readonly onCatchDismissed  = () => { this.scene.resume(); };
+
   constructor() {
     super({ key: "PaloVerdeLane" });
   }
@@ -49,6 +53,11 @@ export default class PaloVerdeLane extends Phaser.Scene {
   }
 
   create(): void {
+    // Reset player position — scene.restart() reuses the same instance,
+    // so class field initializers don't re-run. Must reset explicitly.
+    this.playerGX = PLAYER_START_X;
+    this.playerGY = PLAYER_START_Y;
+
     this.cameras.main.setBackgroundColor(BG_COLOR);
 
     new BorderRenderer(this).create();
@@ -72,8 +81,13 @@ export default class PaloVerdeLane extends Phaser.Scene {
     this.cameraSystem.update(this.playerGX, this.playerGY);
 
     // Pause scene when catch card is showing; resume on dismiss
-    eventBus.on("bugCaught", () => { this.scene.pause(); });
-    eventBus.on("catchCardDismissed", () => { this.scene.resume(); });
+    eventBus.on("bugCaught", this.onBugCaught);
+    eventBus.on("catchCardDismissed", this.onCatchDismissed);
+  }
+
+  shutdown(): void {
+    eventBus.off("bugCaught", this.onBugCaught);
+    eventBus.off("catchCardDismissed", this.onCatchDismissed);
   }
 
   update(_time: number, delta: number): void {
