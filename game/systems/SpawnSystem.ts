@@ -19,18 +19,18 @@ interface SpawnEntry {
 }
 
 // All spawn points are 3+ grid tiles from player start (10, 10).
-// Placed near thematic objects: rocks, cacti, trees, bushes, houses.
+// Placed near thematic objects along natural exploration paths.
 const SPAWN_ENTRIES: SpawnEntry[] = [
-  // Shades — near rock pile at (4, 13)
+  // Shades — near rock pile at (4, 13)   [dist ≈ 6.5]
   { cx: 4.5,  cy: 13.5, species: SHADES_SPECIES,    triggered: false, activeBug: null },
-  // Dusty — near rock pile at (16, 5)
-  { cx: 16.5, cy: 5.5,  species: DUSTY_SPECIES,     triggered: false, activeBug: null },
-  // DJ Beetle — near palo verde tree at (13, 4)
-  { cx: 13.5, cy: 4.5,  species: DJ_BEETLE_SPECIES,  triggered: false, activeBug: null },
-  // Neon Moth — near house at (15, 13), drawn to the porch light
-  { cx: 17.5, cy: 13.5, species: NEON_MOTH_SPECIES,  triggered: false, activeBug: null },
-  // Tiny Tim — near bush at (2, 10), hauling crumbs from the yard
-  { cx: 2.5,  cy: 9.5,  species: TINY_TIM_SPECIES,   triggered: false, activeBug: null },
+  // Dusty — near cactus-short at (15, 8) [dist ≈ 5.7]
+  { cx: 15.5, cy: 8.5,  species: DUSTY_SPECIES,     triggered: false, activeBug: null },
+  // DJ Beetle — near bush at (7, 5)      [dist ≈ 5.1]
+  { cx: 7.5,  cy: 5.5,  species: DJ_BEETLE_SPECIES,  triggered: false, activeBug: null },
+  // Neon Moth — near bush at (14, 11)    [dist ≈ 4.7]
+  { cx: 14.5, cy: 11.5, species: NEON_MOTH_SPECIES,  triggered: false, activeBug: null },
+  // Tiny Tim — near bush at (4, 10)      [dist ≈ 5.5]
+  { cx: 4.5,  cy: 10.5, species: TINY_TIM_SPECIES,   triggered: false, activeBug: null },
 ];
 
 export class SpawnSystem {
