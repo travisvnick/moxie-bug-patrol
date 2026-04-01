@@ -12,11 +12,11 @@ export interface BugSpecies {
   rarity: "Common" | "Uncommon" | "Rare" | "Legendary";
 }
 
-// Shades the Cockroach — slow and cool until cornered
+// Shades the Cockroach — skitters unpredictably, bolts when cornered
 export const SHADES_SPECIES: BugSpecies = {
   key: "shades",
-  wanderSpeed: 0.9,
-  fleeSpeed: 2.2,
+  wanderSpeed: 1.5,
+  fleeSpeed: 3.4,
   name: "Shades",
   funFact: "Cockroaches can hold their breath for 40 minutes and survive a week without their head!",
   rarity: "Common",
@@ -176,7 +176,7 @@ export class Bug {
     const angle = Math.random() * Math.PI * 2;
     this.dirX = Math.cos(angle);
     this.dirY = Math.sin(angle);
-    this.dirTimer = 1.5 + Math.random() * 2.0;  // 1.5–3.5 s per direction
+    this.dirTimer = 0.6 + Math.random() * 1.2;  // 0.6–1.8 s — changes direction frequently
   }
 
   private clampToBounds(): void {

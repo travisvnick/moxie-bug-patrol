@@ -3,20 +3,20 @@ import { Bug } from "../objects/Bug";
 import { gridToScreen } from "../constants";
 
 // ── Static target circle ───────────────────────────────────────────────────────
-// This ring is always visible once a bug is revealed. It represents the "goal".
-// Rarity-colored so players learn difficulty at a glance.
-const STATIC_RADIUS = 48;
+// Rarity-colored. Smaller = harder timing window.
+const STATIC_RADIUS = 26;
 
 // ── Pulsing circle ────────────────────────────────────────────────────────────
-// Oscillates from small → large → small continuously (like Pokémon Go).
-// When pulsing circle radius ≤ STATIC_RADIUS it's "inside" the target = green = catch!
-const PULSE_MIN    = 8;   // smallest the pulsing ring gets
-const PULSE_MAX    = 88;  // largest (always exceeds STATIC_RADIUS)
-const PULSE_PERIOD = 1.8; // seconds per full oscillation
+// Oscillates small → large → small. Green when inside the static ring.
+const PULSE_MIN    = 5;   // smallest radius
+const PULSE_MAX    = 72;  // largest — well outside static ring
+const PULSE_PERIOD = 1.4; // seconds per oscillation (faster = harder)
 
-// ── Catch interaction ─────────────────────────────────────────────────────────
-// Player must be within this many grid tiles to catch.
-const CATCH_DIST = 2.0;
+// ── Proximity ─────────────────────────────────────────────────────────────────
+// Rings only appear/are visible when player is within VISIBILITY_DIST tiles.
+// Must be within CATCH_DIST to actually attempt a catch.
+const VISIBILITY_DIST = 3.5;
+const CATCH_DIST      = 2.0;
 
 // ── Miss penalty (GDD §2) ─────────────────────────────────────────────────────
 const MISS_SPEED_MULT     = 1.6;
@@ -74,13 +74,18 @@ export class CatchSystem {
       entry.pulseTime += dt;
     }
 
-    // Redraw all rings every frame (bugs move, so position changes)
+    // Redraw all rings — only when player is close enough to see them
     this.graphics.clear();
     for (const [bug, entry] of this.rings) {
-      this.drawRing(bug, entry);
+      const dx = bug.gx - playerGX;
+      const dy = bug.gy - playerGY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= VISIBILITY_DIST) {
+        this.drawRing(bug, entry);
+      }
     }
 
-    // Catch tap: find the closest revealed bug within range and evaluate
+    // Catch tap: find the closest revealed bug within catch range and evaluate
     if (catchTapFired && this.rings.size > 0) {
       let closestBug: Bug | null = null;
       let closestDist = Infinity;
