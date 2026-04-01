@@ -28,4 +28,13 @@ export const SaveSystem = {
       }
     }
   },
+
+  clear(): void {
+    if (!isClient()) return;
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // silently skip
+    }
+  },
 };

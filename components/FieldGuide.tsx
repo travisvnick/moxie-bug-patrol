@@ -53,9 +53,10 @@ const RARITY_COLORS: Record<string, string> = {
 };
 
 export default function FieldGuide() {
-  const [isOpen, setIsOpen]         = useState(false);
-  const [caughtKeys, setCaughtKeys] = useState<Set<string>>(new Set());
-  const [detail, setDetail]         = useState<Bug | null>(null);
+  const [isOpen, setIsOpen]           = useState(false);
+  const [caughtKeys, setCaughtKeys]   = useState<Set<string>>(new Set());
+  const [detail, setDetail]           = useState<Bug | null>(null);
+  const [confirming, setConfirming]   = useState(false);
 
   // Load persisted caught bugs on mount
   useEffect(() => {
@@ -76,6 +77,14 @@ export default function FieldGuide() {
   }, []);
 
   const caughtCount = caughtKeys.size;
+
+  function handleResetConfirmed() {
+    SaveSystem.clear();
+    setCaughtKeys(new Set());
+    setConfirming(false);
+    setIsOpen(false);
+    eventBus.emit("resetProgress");
+  }
 
   return (
     <>
@@ -115,7 +124,7 @@ export default function FieldGuide() {
       {/* Field Guide grid overlay */}
       {isOpen && !detail && (
         <div
-          onClick={() => setIsOpen(false)}
+          onClick={() => { setIsOpen(false); setConfirming(false); }}
           style={{
             position: "fixed",
             inset: 0,
@@ -147,7 +156,7 @@ export default function FieldGuide() {
                 Field Guide
               </h2>
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={() => { setIsOpen(false); setConfirming(false); }}
                 aria-label="Close Field Guide"
                 style={{
                   background: "none",
@@ -221,6 +230,77 @@ export default function FieldGuide() {
                 );
               })}
             </div>
+
+            {/* Reset Progress */}
+            {!confirming ? (
+              <div style={{ marginTop: 16, textAlign: "center" }}>
+                <button
+                  onClick={() => setConfirming(true)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#aaa",
+                    fontSize: 12,
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    padding: "8px 0",
+                    minHeight: 44,
+                  }}
+                >
+                  Reset Progress
+                </button>
+              </div>
+            ) : (
+              <div
+                style={{
+                  marginTop: 16,
+                  background: "#FFF3F3",
+                  border: "2px solid #E53935",
+                  borderRadius: 12,
+                  padding: "12px 14px",
+                  textAlign: "center",
+                }}
+              >
+                <p style={{ margin: "0 0 10px", fontSize: 13, color: "#B71C1C", fontWeight: "bold" }}>
+                  Reset all progress? This can&apos;t be undone.
+                </p>
+                <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                  <button
+                    onClick={() => setConfirming(false)}
+                    style={{
+                      flex: 1,
+                      background: "#eee",
+                      border: "none",
+                      borderRadius: 10,
+                      padding: "10px 0",
+                      fontSize: 14,
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                      minHeight: 44,
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleResetConfirmed}
+                    style={{
+                      flex: 1,
+                      background: "#E53935",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 10,
+                      padding: "10px 0",
+                      fontSize: 14,
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                      minHeight: 44,
+                    }}
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

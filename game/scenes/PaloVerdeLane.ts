@@ -40,6 +40,7 @@ export default class PaloVerdeLane extends Phaser.Scene {
   // Named handlers so we can remove them on shutdown
   private readonly onBugCaught       = () => { this.scene.pause(); };
   private readonly onCatchDismissed  = () => { this.scene.resume(); };
+  private readonly onResetProgress   = () => { this.scene.restart(); };
 
   constructor() {
     super({ key: "PaloVerdeLane" });
@@ -83,11 +84,13 @@ export default class PaloVerdeLane extends Phaser.Scene {
     // Pause scene when catch card is showing; resume on dismiss
     eventBus.on("bugCaught", this.onBugCaught);
     eventBus.on("catchCardDismissed", this.onCatchDismissed);
+    eventBus.on("resetProgress", this.onResetProgress);
   }
 
   shutdown(): void {
     eventBus.off("bugCaught", this.onBugCaught);
     eventBus.off("catchCardDismissed", this.onCatchDismissed);
+    eventBus.off("resetProgress", this.onResetProgress);
   }
 
   update(_time: number, delta: number): void {
