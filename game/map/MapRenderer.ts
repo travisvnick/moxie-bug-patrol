@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, gridToScreen } from "../constants";
+import { registerBlocked, registerBlockedRect } from "../systems/CollisionSystem";
 
 // Park tile region (green ground)
 const PARK = { gxMin: 9, gxMax: 13, gyMin: 14, gyMax: 18 };
@@ -97,16 +98,37 @@ export class MapRenderer {
   }
 
   private placeAllObjects(): void {
-    // 2x2 footprint buildings
-    for (const h of HOUSES) this.placeSprite(h.key, h.gx, h.gy, 2);
+    // 2x2 footprint buildings — blocked
+    for (const h of HOUSES) {
+      this.placeSprite(h.key, h.gx, h.gy, 2);
+      registerBlockedRect(h.gx, h.gy, 2, 2);
+    }
     this.placeSprite(HQ.key, HQ.gx, HQ.gy, 2);
+    registerBlockedRect(HQ.gx, HQ.gy, 2, 2);
 
     // 1x1 footprint objects
-    for (const t of TREES)       this.placeSprite("tree-palo-verde", t.gx, t.gy, 1);
-    for (const c of CACTI)       this.placeSprite("cactus",          c.gx, c.gy, 1);
-    for (const c of CACTI_SHORT) this.placeSprite("cactus-short",    c.gx, c.gy, 1);
-    for (const r of ROCKS)       this.placeSprite("rock-pile",       r.gx, r.gy, 1);
-    for (const b of BUSHES)      this.placeSprite("bush",            b.gx, b.gy, 1);
+    // Trees: trunk tile blocked (canopy is walk-under)
+    for (const t of TREES) {
+      this.placeSprite("tree-palo-verde", t.gx, t.gy, 1);
+      registerBlocked(t.gx, t.gy);
+    }
+    // Cacti: blocked
+    for (const c of CACTI) {
+      this.placeSprite("cactus", c.gx, c.gy, 1);
+      registerBlocked(c.gx, c.gy);
+    }
+    // Short cacti: blocked
+    for (const c of CACTI_SHORT) {
+      this.placeSprite("cactus-short", c.gx, c.gy, 1);
+      registerBlocked(c.gx, c.gy);
+    }
+    // Rocks: blocked
+    for (const r of ROCKS) {
+      this.placeSprite("rock-pile", r.gx, r.gy, 1);
+      registerBlocked(r.gx, r.gy);
+    }
+    // Bushes: walkable (not blocked)
+    for (const b of BUSHES) this.placeSprite("bush", b.gx, b.gy, 1);
   }
 
   // Place a sprite at the front-bottom vertex of its tile footprint.

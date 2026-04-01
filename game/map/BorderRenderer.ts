@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { BG_COLOR, GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, gridToScreen } from "../constants";
+import { registerBlocked } from "../systems/CollisionSystem";
 
 // Grid positions that are open exits (no wall drawn)
 function isExitGap(gx: number, gy: number): boolean {
@@ -30,6 +31,18 @@ export class BorderRenderer {
     this.drawFarBackground();
     this.drawBorderWall();
     this.drawDistantScenery();
+    this.registerBorderCollision();
+  }
+
+  /** Register non-gap border tiles as blocked in the collision grid. */
+  private registerBorderCollision(): void {
+    for (let gx = 0; gx < GRID_SIZE; gx++) {
+      for (let gy = 0; gy < GRID_SIZE; gy++) {
+        if (!isBorderTile(gx, gy)) continue;
+        if (isExitGap(gx, gy)) continue;
+        registerBlocked(gx, gy);
+      }
+    }
   }
 
   // ── Far background ─────────────────────────────────────────────────────────

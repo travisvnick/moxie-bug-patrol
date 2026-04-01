@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { gridToScreen, GRID_SIZE } from "../constants";
+import { resolveBugMove } from "../systems/CollisionSystem";
 
 export type BugState = "hidden" | "wander" | "flee" | "hiding";
 
@@ -241,8 +242,11 @@ export class Bug {
   private moveWander(dt: number): void {
     this.dirTimer -= dt;
     if (this.dirTimer <= 0) this.pickWanderDir();
-    this.gx += this.dirX * this.species.wanderSpeed * this.speedMultiplier * dt;
-    this.gy += this.dirY * this.species.wanderSpeed * this.speedMultiplier * dt;
+    const newGX = this.gx + this.dirX * this.species.wanderSpeed * this.speedMultiplier * dt;
+    const newGY = this.gy + this.dirY * this.species.wanderSpeed * this.speedMultiplier * dt;
+    const resolved = resolveBugMove(this.gx, this.gy, newGX, newGY);
+    this.gx = resolved.gx;
+    this.gy = resolved.gy;
     this.clampToBounds();
   }
 
@@ -284,8 +288,11 @@ export class Bug {
       this.dirY = fy / flen;
     }
 
-    this.gx += this.dirX * this.species.fleeSpeed * this.speedMultiplier * dt;
-    this.gy += this.dirY * this.species.fleeSpeed * this.speedMultiplier * dt;
+    const newGX = this.gx + this.dirX * this.species.fleeSpeed * this.speedMultiplier * dt;
+    const newGY = this.gy + this.dirY * this.species.fleeSpeed * this.speedMultiplier * dt;
+    const resolved = resolveBugMove(this.gx, this.gy, newGX, newGY);
+    this.gx = resolved.gx;
+    this.gy = resolved.gy;
     this.clampToBounds();
   }
 
@@ -319,8 +326,11 @@ export class Bug {
     // Move toward hide spot at flee speed (purposeful, no zigzag)
     this.dirX = dx / dist;
     this.dirY = dy / dist;
-    this.gx += this.dirX * this.species.fleeSpeed * dt;
-    this.gy += this.dirY * this.species.fleeSpeed * dt;
+    const newGX = this.gx + this.dirX * this.species.fleeSpeed * dt;
+    const newGY = this.gy + this.dirY * this.species.fleeSpeed * dt;
+    const resolved = resolveBugMove(this.gx, this.gy, newGX, newGY);
+    this.gx = resolved.gx;
+    this.gy = resolved.gy;
 
     if (this.sprite) {
       const { x, y } = this.screenPos();

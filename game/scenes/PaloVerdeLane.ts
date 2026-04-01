@@ -10,22 +10,16 @@ import { InputSystem }    from "../systems/InputSystem";
 import { CameraSystem }  from "../systems/CameraSystem";
 import { SpawnSystem }   from "../systems/SpawnSystem";
 import { CatchSystem }   from "../systems/CatchSystem";
+import { resetCollisionGrid, resolvePlayerMove } from "../systems/CollisionSystem";
 import eventBus from "../eventBus";
 
 // Player moves at 160 px/s in screen space — constant visual speed in any direction.
 const PLAYER_SCREEN_SPEED = 160;
 
-// Walkable bounds (interior tiles only — border is 0 and GRID_SIZE-1).
-// Exit gap tiles allow passing through specific border edges.
-const WALK_MIN = 1.0;
-const WALK_MAX = GRID_SIZE - 2; // 18
-
 // Exit gaps defined in BorderRenderer:
 //   North: gy === 0, gx 8-12
 //   West:  gx === 0, gy 8-12
 //   East:  gx === 19, gy 8-12
-const GAP_MIN = 8;
-const GAP_MAX = 12;
 
 export default class PaloVerdeLane extends Phaser.Scene {
   private inputSystem!: InputSystem;
@@ -61,6 +55,8 @@ export default class PaloVerdeLane extends Phaser.Scene {
 
     this.cameras.main.setBackgroundColor(BG_COLOR);
 
+    // Reset collision grid before placing objects (border + map register tiles)
+    resetCollisionGrid();
     new BorderRenderer(this).create();
     new MapRenderer(this).create();
 
@@ -152,30 +148,32 @@ export default class PaloVerdeLane extends Phaser.Scene {
     // gridToScreen: sx=(gx-gy)*32, sy=(gx+gy)*16  →  J⁻¹ = 1/1024 * [16 32; -16 32]
     const svx = sdx * PLAYER_SCREEN_SPEED;
     const svy = sdy * PLAYER_SCREEN_SPEED;
-    const newGX = this.playerGX + (svx / 64 + svy / 32) * dt;
-    const newGY = this.playerGY + (-svx / 64 + svy / 32) * dt;
+    const rawGX = this.playerGX + (svx / 64 + svy / 32) * dt;
+    const rawGY = this.playerGY + (-svx / 64 + svy / 32) * dt;
 
-    this.playerGX = this.clampAxis(newGX, this.playerGY, "gx");
-    this.playerGY = this.clampAxis(newGY, this.playerGX, "gy");
+    // Check if player is in an exit gap — if so, allow free movement
+    // (exit gap border tiles are not registered as blocked).
+    // Beyond the grid edge, skip collision so the exit zone transition works.
+    const inExitArea =
+      rawGX < 0 || rawGX >= GRID_SIZE - 1 || rawGY < 0;
+
+    if (inExitArea) {
+      // In exit approach area — just clamp to sane outer bounds
+      this.playerGX = Math.max(-3, Math.min(GRID_SIZE + 2, rawGX));
+      this.playerGY = Math.max(-3, Math.min(GRID_SIZE + 2, rawGY));
+    } else {
+      // Normal movement — resolve with collision + wall sliding
+      const resolved = resolvePlayerMove(
+        this.playerGX, this.playerGY, rawGX, rawGY,
+      );
+      this.playerGX = resolved.gx;
+      this.playerGY = resolved.gy;
+    }
 
     // Update sprite position + depth sort
     const { x, y } = gridToScreen(this.playerGX + 1, this.playerGY + 1);
     this.playerSprite.setPosition(x, y);
     this.playerSprite.setDepth(this.playerDepth());
-  }
-
-  // Clamp one axis, allowing passage through exit gaps on the other axis.
-  private clampAxis(val: number, other: number, axis: "gx" | "gy"): number {
-    const inGap = other >= GAP_MIN && other <= GAP_MAX;
-    if (axis === "gx") {
-      // East / West exits: allowed if gy (other) is in gap range
-      if (inGap) return Math.max(-3, Math.min(GRID_SIZE + 2, val));
-      return Math.max(WALK_MIN, Math.min(WALK_MAX, val));
-    } else {
-      // North exit only: allowed if gx (other) is in gap range
-      if (inGap) return Math.max(-3, Math.min(WALK_MAX, val));
-      return Math.max(WALK_MIN, Math.min(WALK_MAX, val));
-    }
   }
 
   private playerDepth(): number {
