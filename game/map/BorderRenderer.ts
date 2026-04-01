@@ -1,5 +1,5 @@
 import * as Phaser from "phaser";
-import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, gridToScreen } from "../constants";
+import { BG_COLOR, GRID_SIZE, TILE_WIDTH, TILE_HEIGHT, gridToScreen } from "../constants";
 
 // Grid positions that are open exits (no wall drawn)
 function isExitGap(gx: number, gy: number): boolean {
@@ -37,21 +37,9 @@ export class BorderRenderer {
     const g = this.scene.add.graphics();
     g.setDepth(0);
 
-    // Desert sand floor — enormous rect covers everything
-    g.fillStyle(0xD4A870, 1);
+    // Solid ground color — matches tiles exactly, no gradient, no sky
+    g.fillStyle(BG_COLOR, 1);
     g.fillRect(-8000, -2000, 16000, 12000);
-
-    // Sky — drawn on top of sand, covers the upper portion
-    g.fillStyle(0x87CEEB, 1);
-    g.fillRect(-8000, -2000, 16000, 2160);
-
-    // Horizon haze band (sky blends into desert)
-    g.fillStyle(0xE8D8A0, 0.45);
-    g.fillRect(-8000, 110, 16000, 100);
-
-    // Lighter inner horizon
-    g.fillStyle(0xF0E8C0, 0.3);
-    g.fillRect(-8000, 140, 16000, 50);
   }
 
   // ── Rock border wall ────────────────────────────────────────────────────────
