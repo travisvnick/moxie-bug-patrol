@@ -53,7 +53,7 @@ export const NEON_MOTH_SPECIES: BugSpecies = {
   wanderSpeed: 1.2,
   fleeSpeed: 2.6,
   name: "Neon Moth",
-  speciesType: "Neon Moth",
+  speciesType: "Sphinx Moth",
   funFact: "Some moths navigate by moonlight and can detect a single pheromone molecule from miles away!",
   rarity: "Uncommon",
 };
