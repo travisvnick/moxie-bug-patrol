@@ -151,6 +151,7 @@ export class CatchSystem {
     this.scene.time.delayedCall(400, () => {
       eventBus.emit("bugCaught", {
         name: bug.species.name,
+        speciesType: bug.species.speciesType,
         funFact: bug.species.funFact,
         rarity: bug.species.rarity,
         spriteKey: bug.species.key,

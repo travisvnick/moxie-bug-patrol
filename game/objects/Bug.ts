@@ -8,6 +8,7 @@ export interface BugSpecies {
   wanderSpeed: number;  // grid units per second (relaxed wandering)
   fleeSpeed: number;    // grid units per second (panicked fleeing)
   name: string;
+  speciesType: string;  // display label, e.g. "Cockroach"
   funFact: string;
   rarity: "Common" | "Uncommon" | "Rare" | "Legendary";
 }
@@ -18,6 +19,7 @@ export const SHADES_SPECIES: BugSpecies = {
   wanderSpeed: 1.4,
   fleeSpeed: 3.0,
   name: "Shades",
+  speciesType: "Cockroach",
   funFact: "Cockroaches can hold their breath for 40 minutes and survive a week without their head!",
   rarity: "Common",
 };
