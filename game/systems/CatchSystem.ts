@@ -13,12 +13,13 @@ const PULSE_MAX    = 72;  // largest — well outside static ring
 const PULSE_PERIOD = 1.4; // seconds per oscillation (faster = harder)
 
 // ── Proximity ─────────────────────────────────────────────────────────────────
-const VISIBILITY_DIST = 3.5;
-const CATCH_DIST      = 2.0;
+// One threshold for both ring visibility and catch eligibility.
+// If the ring is visible, the player can attempt a catch — no silent failures.
+const PROXIMITY_DIST = 3.5;
 
 // ── Catch leniency ────────────────────────────────────────────────────────────
-// Allow a few extra pixels so a tap that visually looks green always registers.
-const CATCH_LENIENCY = 5;
+// Extra pixels of forgiveness so a visually-green tap always registers green.
+const CATCH_LENIENCY = 8;
 
 // ── Miss penalty (GDD §2) ─────────────────────────────────────────────────────
 const MISS_SPEED_MULT     = 1.6;
@@ -82,7 +83,7 @@ export class CatchSystem {
         const dx = bug.gx - playerGX;
         const dy = bug.gy - playerGY;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < CATCH_DIST && dist < closestDist) {
+        if (dist < PROXIMITY_DIST && dist < closestDist) {
           closestBug = bug;
           closestDist = dist;
         }
@@ -109,7 +110,7 @@ export class CatchSystem {
       const dx = bug.gx - playerGX;
       const dy = bug.gy - playerGY;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist <= VISIBILITY_DIST) {
+      if (dist <= PROXIMITY_DIST) {
         this.drawRing(bug, entry);
       }
     }

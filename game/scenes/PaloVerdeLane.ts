@@ -70,8 +70,10 @@ export default class PaloVerdeLane extends Phaser.Scene {
   update(_time: number, delta: number): void {
     const dt = delta / 1000;
     this.inputSystem.update();
-    this.movePlayer(delta);
-    this.spawnSystem.update(this.playerGX, this.playerGY, dt);
+
+    // Evaluate catch BEFORE any movement this frame.
+    // Both player and bug positions are still at last-frame values,
+    // matching exactly what was rendered — no positional drift before the check.
     this.catchSystem.update(
       dt,
       this.playerGX,
@@ -79,6 +81,9 @@ export default class PaloVerdeLane extends Phaser.Scene {
       this.spawnSystem.getBugs(),
       this.inputSystem.catchTapFired,
     );
+
+    this.movePlayer(delta);
+    this.spawnSystem.update(this.playerGX, this.playerGY, dt);
     this.cameraSystem.update(this.playerGX, this.playerGY);
   }
 
