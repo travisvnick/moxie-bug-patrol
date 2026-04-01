@@ -13,10 +13,12 @@ const PULSE_MAX    = 72;  // largest — well outside static ring
 const PULSE_PERIOD = 1.4; // seconds per oscillation (faster = harder)
 
 // ── Proximity ─────────────────────────────────────────────────────────────────
-// Rings only appear/are visible when player is within VISIBILITY_DIST tiles.
-// Must be within CATCH_DIST to actually attempt a catch.
 const VISIBILITY_DIST = 3.5;
 const CATCH_DIST      = 2.0;
+
+// ── Catch leniency ────────────────────────────────────────────────────────────
+// Allow a few extra pixels so a tap that visually looks green always registers.
+const CATCH_LENIENCY = 5;
 
 // ── Miss penalty (GDD §2) ─────────────────────────────────────────────────────
 const MISS_SPEED_MULT     = 1.6;
@@ -69,23 +71,9 @@ export class CatchSystem {
       if (bug.caught || bug.state === "hidden") this.rings.delete(bug);
     }
 
-    // Advance pulse timers
-    for (const [, entry] of this.rings) {
-      entry.pulseTime += dt;
-    }
-
-    // Redraw all rings — only when player is close enough to see them
-    this.graphics.clear();
-    for (const [bug, entry] of this.rings) {
-      const dx = bug.gx - playerGX;
-      const dy = bug.gy - playerGY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist <= VISIBILITY_DIST) {
-        this.drawRing(bug, entry);
-      }
-    }
-
-    // Catch tap: find the closest revealed bug within catch range and evaluate
+    // ── Evaluate catch tap BEFORE advancing time ───────────────────────────────
+    // The player reacts to what they saw last frame. Evaluating before the timer
+    // advances ensures the ring state we judge matches what was on screen.
     if (catchTapFired && this.rings.size > 0) {
       let closestBug: Bug | null = null;
       let closestDist = Infinity;
@@ -103,11 +91,26 @@ export class CatchSystem {
       if (closestBug) {
         const entry = this.rings.get(closestBug)!;
         const pulseRadius = this.calcPulseRadius(entry.pulseTime);
-        if (pulseRadius <= STATIC_RADIUS) {
+        if (pulseRadius <= STATIC_RADIUS + CATCH_LENIENCY) {
           this.successCatch(closestBug);
         } else {
           this.missCatch(closestBug);
         }
+      }
+    }
+
+    // ── Advance timers, then redraw ────────────────────────────────────────────
+    for (const [, entry] of this.rings) {
+      entry.pulseTime += dt;
+    }
+
+    this.graphics.clear();
+    for (const [bug, entry] of this.rings) {
+      const dx = bug.gx - playerGX;
+      const dy = bug.gy - playerGY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= VISIBILITY_DIST) {
+        this.drawRing(bug, entry);
       }
     }
   }
