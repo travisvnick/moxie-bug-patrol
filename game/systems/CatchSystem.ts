@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { Bug } from "../objects/Bug";
 import { gridToScreen } from "../constants";
+import eventBus from "../eventBus";
 
 // ── Static target circle ───────────────────────────────────────────────────────
 // Rarity-colored. Smaller = harder timing window.
@@ -146,6 +147,15 @@ export class CatchSystem {
     this.rings.delete(bug);
     bug.catch();
     this.spawnSparkles(x, y);
+    // Delay slightly so the sparkle burst is visible before the card covers the screen
+    this.scene.time.delayedCall(400, () => {
+      eventBus.emit("bugCaught", {
+        name: bug.species.name,
+        funFact: bug.species.funFact,
+        rarity: bug.species.rarity,
+        spriteKey: bug.species.key,
+      });
+    });
   }
 
   private missCatch(bug: Bug): void {

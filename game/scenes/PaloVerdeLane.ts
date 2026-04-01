@@ -9,6 +9,7 @@ import { InputSystem }    from "../systems/InputSystem";
 import { CameraSystem }  from "../systems/CameraSystem";
 import { SpawnSystem }   from "../systems/SpawnSystem";
 import { CatchSystem }   from "../systems/CatchSystem";
+import eventBus from "../eventBus";
 
 // Player moves at 160 px/s in screen space — constant visual speed in any direction.
 const PLAYER_SCREEN_SPEED = 160;
@@ -65,6 +66,10 @@ export default class PaloVerdeLane extends Phaser.Scene {
 
     // Snap camera to player on creation
     this.cameraSystem.update(this.playerGX, this.playerGY);
+
+    // Pause scene when catch card is showing; resume on dismiss
+    eventBus.on("bugCaught", () => { this.scene.pause(); });
+    eventBus.on("catchCardDismissed", () => { this.scene.resume(); });
   }
 
   update(_time: number, delta: number): void {
