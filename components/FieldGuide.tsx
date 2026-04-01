@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import eventBus from "@/game/eventBus";
+import { SaveSystem } from "@/game/systems/SaveSystem";
 
 // All 5 bugs in the game — data mirrors Bug.ts species definitions
 const ALL_BUGS = [
@@ -56,9 +57,18 @@ export default function FieldGuide() {
   const [caughtKeys, setCaughtKeys] = useState<Set<string>>(new Set());
   const [detail, setDetail]         = useState<Bug | null>(null);
 
+  // Load persisted caught bugs on mount
+  useEffect(() => {
+    const saved = SaveSystem.load();
+    if (saved.length > 0) {
+      setCaughtKeys(new Set(saved));
+    }
+  }, []);
+
   useEffect(() => {
     const handler = (data: unknown) => {
       const { spriteKey } = data as { spriteKey: string };
+      SaveSystem.addCaught(spriteKey);
       setCaughtKeys(prev => new Set([...prev, spriteKey]));
     };
     eventBus.on("bugCaught", handler);

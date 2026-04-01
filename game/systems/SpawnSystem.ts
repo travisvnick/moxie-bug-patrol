@@ -7,6 +7,7 @@ import {
   NEON_MOTH_SPECIES,
   TINY_TIM_SPECIES,
 } from "../objects/Bug";
+import { SaveSystem } from "./SaveSystem";
 
 const REVEAL_RADIUS = 1.5;
 
@@ -40,7 +41,12 @@ export class SpawnSystem {
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
-    this.entries = SPAWN_ENTRIES.map(e => ({ ...e }));
+    const caughtKeys = new Set(SaveSystem.load());
+    // Pre-mark spawn entries for already-caught bugs so they don't re-spawn
+    this.entries = SPAWN_ENTRIES.map(e => ({
+      ...e,
+      triggered: caughtKeys.has(e.species.key),
+    }));
   }
 
   static preload(scene: Phaser.Scene): void {
