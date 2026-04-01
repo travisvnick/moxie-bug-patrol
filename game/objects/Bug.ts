@@ -48,6 +48,11 @@ export class Bug {
   private speedMultiplier: number = 1.0;
   private speedBoostTimer: number = 0;
 
+  // Flee zigzag — periodically flip a perpendicular component so it doesn't
+  // run in a straight line, and wall repulsion keeps it out of corners.
+  private fleeJitter: number = 1;
+  private fleeJitterTimer: number = 0;
+
   constructor(scene: Phaser.Scene, gx: number, gy: number, species: BugSpecies) {
     this.scene = scene;
     this.gx = gx;
@@ -160,15 +165,48 @@ export class Bug {
   }
 
   private moveFlee(dt: number, playerGX: number, playerGY: number): void {
+    // Flip zigzag direction periodically so it doesn't run in a straight line
+    this.fleeJitterTimer -= dt;
+    if (this.fleeJitterTimer <= 0) {
+      this.fleeJitter = Math.random() < 0.5 ? 1 : -1;
+      this.fleeJitterTimer = 0.35 + Math.random() * 0.55; // 0.35–0.9s
+    }
+
+    // Base flee direction: directly away from player
     const dx = this.gx - playerGX;
     const dy = this.gy - playerGY;
     const len = Math.sqrt(dx * dx + dy * dy);
-    if (len > 0) {
-      this.dirX = dx / len;
-      this.dirY = dy / len;
-      this.gx += this.dirX * this.species.fleeSpeed * this.speedMultiplier * dt;
-      this.gy += this.dirY * this.species.fleeSpeed * this.speedMultiplier * dt;
+    let fx = len > 0 ? dx / len : 0;
+    let fy = len > 0 ? dy / len : 0;
+
+    // Perpendicular zigzag — adds sideways wobble to the escape path
+    const perpX = -fy;
+    const perpY =  fx;
+    fx += perpX * this.fleeJitter * 0.5;
+    fy += perpY * this.fleeJitter * 0.5;
+
+    // Wall repulsion — steers away from boundaries so it doesn't corner itself
+    const WALL_DIST     = 3.5;
+    const WALL_STRENGTH = 2.0;
+    const leftDist   = this.gx - BOUNDS_MIN;
+    const rightDist  = BOUNDS_MAX - this.gx;
+    const topDist    = this.gy - BOUNDS_MIN;
+    const bottomDist = BOUNDS_MAX - this.gy;
+
+    if (leftDist   < WALL_DIST) fx += WALL_STRENGTH * (1 - leftDist   / WALL_DIST);
+    if (rightDist  < WALL_DIST) fx -= WALL_STRENGTH * (1 - rightDist  / WALL_DIST);
+    if (topDist    < WALL_DIST) fy += WALL_STRENGTH * (1 - topDist    / WALL_DIST);
+    if (bottomDist < WALL_DIST) fy -= WALL_STRENGTH * (1 - bottomDist / WALL_DIST);
+
+    // Normalize and apply
+    const flen = Math.sqrt(fx * fx + fy * fy);
+    if (flen > 0) {
+      this.dirX = fx / flen;
+      this.dirY = fy / flen;
     }
+
+    this.gx += this.dirX * this.species.fleeSpeed * this.speedMultiplier * dt;
+    this.gy += this.dirY * this.species.fleeSpeed * this.speedMultiplier * dt;
     this.clampToBounds();
   }
 
