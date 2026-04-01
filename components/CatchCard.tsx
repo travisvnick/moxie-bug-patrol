@@ -61,15 +61,12 @@ export default function CatchCard() {
         style={{
           background: "#fff",
           borderRadius: 18,
-          padding: "18px 20px 20px",
-          maxWidth: 380,
+          padding: "12px 16px 14px",
+          maxWidth: 360,
           width: "100%",
           textAlign: "center",
           boxShadow: "0 8px 40px rgba(0,0,0,0.45)",
           fontFamily: "system-ui, -apple-system, sans-serif",
-          // Shrink if needed, scroll internally as absolute last resort
-          maxHeight: "calc(100dvh - 32px)",
-          overflowY: "auto",
           boxSizing: "border-box",
         }}
       >
@@ -81,9 +78,9 @@ export default function CatchCard() {
             color: "#000",
             fontWeight: "bold",
             fontSize: 11,
-            padding: "3px 12px",
+            padding: "2px 10px",
             borderRadius: 10,
-            marginBottom: 8,
+            marginBottom: 6,
             letterSpacing: 1.5,
             textTransform: "uppercase",
           }}
@@ -94,10 +91,10 @@ export default function CatchCard() {
         {/* Bug name */}
         <h2
           style={{
-            fontSize: 24,
+            fontSize: 22,
             fontWeight: "bold",
             color: "#123250",
-            margin: "0 0 2px",
+            margin: "0 0 1px",
             lineHeight: 1.2,
           }}
         >
@@ -107,9 +104,9 @@ export default function CatchCard() {
         {/* Species type — small subtitle */}
         <p
           style={{
-            fontSize: 13,
+            fontSize: 12,
             color: "#6B87A0",
-            margin: "0 0 12px",
+            margin: "0 0 8px",
             fontStyle: "italic",
           }}
         >
@@ -120,9 +117,9 @@ export default function CatchCard() {
         <div
           style={{
             background: "#f0f4f8",
-            borderRadius: 14,
-            padding: "12px",
-            marginBottom: 12,
+            borderRadius: 12,
+            padding: "8px",
+            marginBottom: 8,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -132,7 +129,7 @@ export default function CatchCard() {
           <img
             src={`/sprites/${card.spriteKey}.svg`}
             alt={card.name}
-            style={{ width: 80, height: 80, objectFit: "contain" }}
+            style={{ width: 64, height: 64, objectFit: "contain" }}
           />
         </div>
 
@@ -141,12 +138,12 @@ export default function CatchCard() {
           style={{
             background: "#EBF4FF",
             border: "2px solid #0C77D8",
-            borderRadius: 12,
-            padding: "10px 14px",
-            marginBottom: 16,
+            borderRadius: 10,
+            padding: "8px 12px",
+            marginBottom: 10,
             fontSize: 13,
             color: "#123250",
-            lineHeight: 1.5,
+            lineHeight: 1.45,
             textAlign: "left",
           }}
         >
@@ -162,8 +159,8 @@ export default function CatchCard() {
             color: "#fff",
             border: "none",
             borderRadius: 12,
-            padding: "13px 44px",
-            fontSize: 17,
+            padding: "11px 44px",
+            fontSize: 16,
             fontWeight: "bold",
             cursor: "pointer",
             minWidth: 130,
