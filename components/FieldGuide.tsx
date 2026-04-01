@@ -3,18 +3,58 @@
 import { useEffect, useState } from "react";
 import eventBus from "@/game/eventBus";
 
-// All 5 bugs in the game — matches spawn entries in SpawnSystem
+// All 5 bugs in the game — data mirrors Bug.ts species definitions
 const ALL_BUGS = [
-  { key: "shades",    name: "Shades",    speciesType: "Cockroach" },
-  { key: "dusty",     name: "Dusty",     speciesType: "Bark Scorpion" },
-  { key: "dj-beetle", name: "DJ Beetle", speciesType: "Palo Verde Beetle" },
-  { key: "neon-moth", name: "Neon Moth", speciesType: "Sphinx Moth" },
-  { key: "tiny-tim",  name: "Tiny Tim",  speciesType: "Harvester Ant" },
+  {
+    key: "shades",
+    name: "Shades",
+    speciesType: "Cockroach",
+    rarity: "Common" as const,
+    funFact: "Cockroaches can hold their breath for 40 minutes and survive a week without their head!",
+  },
+  {
+    key: "dusty",
+    name: "Dusty",
+    speciesType: "Bark Scorpion",
+    rarity: "Common" as const,
+    funFact: "Bark scorpions glow bright blue under UV light. That's how real pest techs find them at night!",
+  },
+  {
+    key: "dj-beetle",
+    name: "DJ Beetle",
+    speciesType: "Palo Verde Beetle",
+    rarity: "Uncommon" as const,
+    funFact: "Palo verde beetles can grow up to 4 inches long — one of the biggest beetles in North America!",
+  },
+  {
+    key: "neon-moth",
+    name: "Neon Moth",
+    speciesType: "Sphinx Moth",
+    rarity: "Uncommon" as const,
+    funFact: "Some moths navigate by moonlight and can detect a single pheromone molecule from miles away!",
+  },
+  {
+    key: "tiny-tim",
+    name: "Tiny Tim",
+    speciesType: "Harvester Ant",
+    rarity: "Common" as const,
+    funFact: "Harvester ants can carry 50 times their own body weight. That's like you lifting a car!",
+  },
 ];
 
+type Bug = typeof ALL_BUGS[number];
+
+const RARITY_COLORS: Record<string, string> = {
+  Common:    "#44DD44",
+  Uncommon:  "#FFCC00",
+  Rare:      "#FF6600",
+  Legendary: "#FF44FF",
+};
+
 export default function FieldGuide() {
-  const [isOpen, setIsOpen]     = useState(false);
+  const [isOpen, setIsOpen]         = useState(false);
   const [caughtKeys, setCaughtKeys] = useState<Set<string>>(new Set());
+  const [detail, setDetail]         = useState<Bug | null>(null);
 
   useEffect(() => {
     const handler = (data: unknown) => {
@@ -62,8 +102,8 @@ export default function FieldGuide() {
         <span>BUGS</span>
       </button>
 
-      {/* Field Guide overlay */}
-      {isOpen && (
+      {/* Field Guide grid overlay */}
+      {isOpen && !detail && (
         <div
           onClick={() => setIsOpen(false)}
           style={{
@@ -123,24 +163,20 @@ export default function FieldGuide() {
             </p>
 
             {/* Bug grid — 3 columns */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: 10,
-              }}
-            >
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
               {ALL_BUGS.map(bug => {
                 const caught = caughtKeys.has(bug.key);
                 return (
                   <div
                     key={bug.key}
+                    onClick={caught ? () => setDetail(bug) : undefined}
                     style={{
                       background: caught ? "#EBF4FF" : "#f0f0f0",
                       border: `2px solid ${caught ? "#0C77D8" : "#ddd"}`,
                       borderRadius: 12,
                       padding: "10px 6px 8px",
                       textAlign: "center",
+                      cursor: caught ? "pointer" : "default",
                     }}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -175,6 +211,126 @@ export default function FieldGuide() {
                 );
               })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bug detail popup */}
+      {detail && (
+        <div
+          onClick={() => setDetail(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.80)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 950,
+            padding: 16,
+            boxSizing: "border-box",
+            overflowY: "auto",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              borderRadius: 18,
+              padding: "12px 16px 14px",
+              maxWidth: 360,
+              width: "100%",
+              textAlign: "center",
+              boxShadow: "0 8px 40px rgba(0,0,0,0.45)",
+              fontFamily: "system-ui, -apple-system, sans-serif",
+              boxSizing: "border-box",
+            }}
+          >
+            {/* Rarity badge */}
+            <div
+              style={{
+                display: "inline-block",
+                background: RARITY_COLORS[detail.rarity] ?? "#44DD44",
+                color: "#000",
+                fontWeight: "bold",
+                fontSize: 11,
+                padding: "2px 10px",
+                borderRadius: 10,
+                marginBottom: 6,
+                letterSpacing: 1.5,
+                textTransform: "uppercase",
+              }}
+            >
+              {detail.rarity}
+            </div>
+
+            {/* Bug name */}
+            <h2 style={{ fontSize: 22, fontWeight: "bold", color: "#123250", margin: "0 0 1px", lineHeight: 1.2 }}>
+              {detail.name}
+            </h2>
+
+            {/* Species type */}
+            <p style={{ fontSize: 12, color: "#6B87A0", margin: "0 0 8px", fontStyle: "italic" }}>
+              the {detail.speciesType.toLowerCase()}
+            </p>
+
+            {/* Large SVG illustration */}
+            <div
+              style={{
+                background: "#f0f4f8",
+                borderRadius: 12,
+                padding: "12px",
+                marginBottom: 8,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/sprites/${detail.key}.svg`}
+                alt={detail.name}
+                style={{ width: 96, height: 96, objectFit: "contain" }}
+              />
+            </div>
+
+            {/* Fun fact */}
+            <div
+              style={{
+                background: "#EBF4FF",
+                border: "2px solid #0C77D8",
+                borderRadius: 10,
+                padding: "8px 12px",
+                marginBottom: 10,
+                fontSize: 13,
+                color: "#123250",
+                lineHeight: 1.45,
+                textAlign: "left",
+              }}
+            >
+              <strong style={{ color: "#0C77D8" }}>Fun Fact: </strong>
+              {detail.funFact}
+            </div>
+
+            {/* Close button */}
+            <button
+              onClick={() => setDetail(null)}
+              style={{
+                background: "#0C77D8",
+                color: "#fff",
+                border: "none",
+                borderRadius: 12,
+                padding: "11px 44px",
+                fontSize: 16,
+                fontWeight: "bold",
+                cursor: "pointer",
+                minWidth: 130,
+                minHeight: 48,
+                width: "100%",
+              }}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
