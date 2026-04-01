@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="144" viewBox="0 0 128 144">
+  <!-- Shadow at base -->
+  <ellipse cx="64" cy="139" rx="52" ry="9" fill="#B8944A" opacity="0.35"/>
+
+  <!-- LEFT WALL: slightly warmer stucco tone -->
+  <polygon points="0,104 64,136 64,96 0,64" fill="#DBA878"/>
+  <line x1="0" y1="88" x2="64" y2="120" stroke="#CA9A68" stroke-width="0.8" opacity="0.6"/>
+  <line x1="0" y1="76" x2="64" y2="108" stroke="#CA9A68" stroke-width="0.8" opacity="0.6"/>
+
+  <!-- RIGHT WALL: lighter warm tone -->
+  <polygon points="64,136 128,104 128,64 64,96" fill="#F0C890"/>
+  <line x1="64" y1="116" x2="128" y2="84" stroke="#E4B878" stroke-width="0.8" opacity="0.5"/>
+  <line x1="64" y1="106" x2="128" y2="74" stroke="#E4B878" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- ROOF: front-left slope (lit terracotta) -->
+  <polygon points="0,64 64,96 64,40" fill="#D85C28"/>
+  <!-- ROOF: front-right slope (darker) -->
+  <polygon points="64,96 128,64 64,40" fill="#B04020"/>
+  <!-- ROOF: back-left (darkest) -->
+  <polygon points="0,64 64,32 64,40" fill="#983518"/>
+  <!-- ROOF: back-right -->
+  <polygon points="128,64 64,32 64,40" fill="#AA3C1C"/>
+
+  <!-- WINDOW left wall (with shutter effect) -->
+  <polygon points="8,80 24,88 24,100 8,92" fill="#A8D8EA"/>
+  <polygon points="8,80 24,88 24,100 8,92" fill="none" stroke="#5A3010" stroke-width="1.2"/>
+  <!-- shutter left -->
+  <polygon points="4,79 10,82 10,100 4,97" fill="#8B4A18" opacity="0.7"/>
+  <!-- shutter right -->
+  <polygon points="22,89 28,92 28,100 22,97" fill="#8B4A18" opacity="0.7"/>
+
+  <!-- Second window left wall -->
+  <polygon points="36,88 52,96 52,108 36,100" fill="#A8D8EA"/>
+  <polygon points="36,88 52,96 52,108 36,100" fill="none" stroke="#5A3010" stroke-width="1.2"/>
+
+  <!-- DOOR left wall (arched top) -->
+  <polygon points="44,106 58,113 58,132 44,125" fill="#7A4820"/>
+  <!-- arch top of door -->
+  <ellipse cx="51" cy="106" rx="7" ry="5" fill="#7A4820" transform="rotate(-14, 51, 106)"/>
+  <polygon points="44,106 58,113 58,132 44,125" fill="none" stroke="#5A3010" stroke-width="1.2"/>
+
+  <!-- WINDOW right wall -->
+  <polygon points="76,100 92,92 92,104 76,112" fill="#A8D8EA"/>
+  <polygon points="76,100 92,92 92,104 76,112" fill="none" stroke="#5A3010" stroke-width="1.2"/>
+
+  <!-- OUTLINES -->
+  <polygon points="0,104 64,136 128,104 64,72" fill="none" stroke="#5A3010" stroke-width="1.5"/>
+  <line x1="0" y1="64" x2="0" y2="104" stroke="#5A3010" stroke-width="2"/>
+  <line x1="128" y1="64" x2="128" y2="104" stroke="#5A3010" stroke-width="2"/>
+  <line x1="64" y1="96" x2="64" y2="136" stroke="#5A3010" stroke-width="1.5"/>
+  <polyline points="0,64 64,96 128,64" stroke="#5A3010" stroke-width="2" fill="none"/>
+  <polyline points="0,64 64,32 128,64" stroke="#5A3010" stroke-width="1.5" fill="none"/>
+  <line x1="64" y1="40" x2="0" y2="64" stroke="#5A3010" stroke-width="1.5"/>
+  <line x1="64" y1="40" x2="64" y2="96" stroke="#5A3010" stroke-width="1.5"/>
+  <line x1="64" y1="40" x2="128" y2="64" stroke="#5A3010" stroke-width="1.5"/>
+  <line x1="64" y1="40" x2="64" y2="32" stroke="#5A3010" stroke-width="1.2"/>
+</svg>

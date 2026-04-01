@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="120" viewBox="0 0 320 120">
+  <!-- Far distant mesa silhouettes — Arizona desert horizon -->
+  <!-- Farthest mesa (lightest, most faded) -->
+  <polygon points="0,90 60,40 90,38 130,55 160,35 200,45 240,38 280,52 320,42 320,120 0,120"
+           fill="#C4906A" opacity="0.35"/>
+  <!-- Mid mesa layer -->
+  <polygon points="0,100 40,60 80,55 110,70 150,52 190,58 220,50 260,62 300,54 320,65 320,120 0,120"
+           fill="#B87850" opacity="0.5"/>
+  <!-- Nearest mesa ridge (most visible) -->
+  <polygon points="0,108 30,72 55,68 80,80 110,65 140,72 175,60 210,70 240,63 270,74 300,66 320,72 320,120 0,120"
+           fill="#A86840" opacity="0.65"/>
+  <!-- Ground haze at horizon base -->
+  <rect x="0" y="105" width="320" height="15" fill="#DEB882" opacity="0.3"/>
+</svg>

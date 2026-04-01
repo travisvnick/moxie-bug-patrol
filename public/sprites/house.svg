@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="144" viewBox="0 0 128 144">
+  <!-- Shadow at base -->
+  <ellipse cx="64" cy="139" rx="52" ry="9" fill="#B8944A" opacity="0.35"/>
+
+  <!-- LEFT WALL: parallelogram (0,104)→(64,136)→(64,96)→(0,64) -->
+  <polygon points="0,104 64,136 64,96 0,64" fill="#D4AF6A"/>
+  <!-- LEFT WALL: stucco texture lines -->
+  <line x1="0" y1="88" x2="64" y2="120" stroke="#C8A058" stroke-width="0.8" opacity="0.6"/>
+  <line x1="0" y1="76" x2="64" y2="108" stroke="#C8A058" stroke-width="0.8" opacity="0.6"/>
+
+  <!-- RIGHT WALL: parallelogram (64,136)→(128,104)→(128,64)→(64,96) -->
+  <polygon points="64,136 128,104 128,64 64,96" fill="#ECC878"/>
+  <!-- RIGHT WALL: stucco texture lines -->
+  <line x1="64" y1="116" x2="128" y2="84" stroke="#E0C068" stroke-width="0.8" opacity="0.5"/>
+  <line x1="64" y1="106" x2="128" y2="74" stroke="#E0C068" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- ROOF: front-left slope (0,64)→(64,96)→apex(64,40) — lit terracotta -->
+  <polygon points="0,64 64,96 64,40" fill="#E06030"/>
+  <!-- ROOF: front-right slope (64,96)→(128,64)→apex(64,40) — darker terracotta -->
+  <polygon points="64,96 128,64 64,40" fill="#C04018"/>
+  <!-- ROOF: back-left slope (0,64)→(64,32)→apex(64,40) — darkest -->
+  <polygon points="0,64 64,32 64,40" fill="#A83010"/>
+  <!-- ROOF: back-right slope (128,64)→(64,32)→apex(64,40) -->
+  <polygon points="128,64 64,32 64,40" fill="#B83818"/>
+
+  <!-- WINDOW left wall -->
+  <polygon points="10,83 26,91 26,103 10,95" fill="#A8D8EA"/>
+  <polygon points="10,83 26,91 26,103 10,95" fill="none" stroke="#5A3010" stroke-width="1.2"/>
+  <line x1="18" y1="83" x2="18" y2="103" stroke="#80C0D8" stroke-width="0.8"/>
+
+  <!-- DOOR left wall -->
+  <polygon points="42,103 56,110 56,132 42,125" fill="#8B5A2B"/>
+  <polygon points="42,103 56,110 56,132 42,125" fill="none" stroke="#5A3010" stroke-width="1.2"/>
+  <!-- door knob -->
+  <circle cx="53" cy="121" r="2" fill="#D4A020"/>
+
+  <!-- WINDOW right wall -->
+  <polygon points="80,102 96,94 96,106 80,114" fill="#A8D8EA"/>
+  <polygon points="80,102 96,94 96,106 80,114" fill="none" stroke="#5A3010" stroke-width="1.2"/>
+  <line x1="88" y1="94" x2="88" y2="114" stroke="#80C0D8" stroke-width="0.8"/>
+
+  <!-- OUTLINES -->
+  <!-- Base diamond outline -->
+  <polygon points="0,104 64,136 128,104 64,72" fill="none" stroke="#5A3010" stroke-width="1.5"/>
+  <!-- Wall vertical edges -->
+  <line x1="0" y1="64" x2="0" y2="104" stroke="#5A3010" stroke-width="2"/>
+  <line x1="128" y1="64" x2="128" y2="104" stroke="#5A3010" stroke-width="2"/>
+  <line x1="64" y1="96" x2="64" y2="136" stroke="#5A3010" stroke-width="1.5"/>
+  <!-- Wall top edge -->
+  <polyline points="0,64 64,96 128,64" stroke="#5A3010" stroke-width="2" fill="none"/>
+  <!-- Wall back top edge -->
+  <polyline points="0,64 64,32 128,64" stroke="#5A3010" stroke-width="1.5" fill="none"/>
+  <!-- Roof apex lines -->
+  <line x1="64" y1="40" x2="0" y2="64" stroke="#5A3010" stroke-width="1.5"/>
+  <line x1="64" y1="40" x2="64" y2="96" stroke="#5A3010" stroke-width="1.5"/>
+  <line x1="64" y1="40" x2="128" y2="64" stroke="#5A3010" stroke-width="1.5"/>
+  <line x1="64" y1="40" x2="64" y2="32" stroke="#5A3010" stroke-width="1.2"/>
+</svg>

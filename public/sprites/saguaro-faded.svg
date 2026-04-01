@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="72" viewBox="0 0 32 72">
+  <!-- Faded/distant saguaro — appears beyond the border wall -->
+  <!-- Left arm -->
+  <rect x="2" y="26" width="9" height="5" rx="3" fill="#8BA878" opacity="0.5"/>
+  <rect x="2" y="16" width="9" height="15" rx="5" fill="#8BA878" opacity="0.5"/>
+  <!-- Right arm -->
+  <rect x="21" y="32" width="9" height="5" rx="3" fill="#8BA878" opacity="0.5"/>
+  <rect x="21" y="22" width="9" height="15" rx="5" fill="#8BA878" opacity="0.5"/>
+  <!-- Main trunk -->
+  <rect x="11" y="4" width="10" height="64" rx="5" fill="#8BA878" opacity="0.55"/>
+</svg>

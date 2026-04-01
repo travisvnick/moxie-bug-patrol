@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="168" viewBox="0 0 128 168">
+  <!-- Shadow -->
+  <ellipse cx="64" cy="162" rx="54" ry="9" fill="#B8944A" opacity="0.35"/>
+
+  <!-- LEFT WALL: cream/white stucco -->
+  <!-- Vertices: (0,128)→(64,160)→(64,104)→(0,72) -->
+  <polygon points="0,128 64,160 64,104 0,72" fill="#E8E4D0"/>
+  <!-- Moxie Blue accent stripe on left wall -->
+  <polygon points="0,98 64,130 64,122 0,90" fill="#0C77D8" opacity="0.85"/>
+  <!-- Stucco texture lines -->
+  <line x1="0" y1="112" x2="64" y2="144" stroke="#D8D4BC" stroke-width="0.8" opacity="0.7"/>
+  <line x1="0" y1="82" x2="64" y2="114" stroke="#D8D4BC" stroke-width="0.8" opacity="0.7"/>
+
+  <!-- RIGHT WALL: slightly lighter cream -->
+  <!-- Vertices: (64,160)→(128,128)→(128,72)→(64,104) -->
+  <polygon points="64,160 128,128 128,72 64,104" fill="#F4F0DC"/>
+  <!-- Moxie Blue accent stripe on right wall -->
+  <polygon points="64,130 128,98 128,90 64,122" fill="#0C77D8" opacity="0.75"/>
+  <!-- Stucco texture -->
+  <line x1="64" y1="140" x2="128" y2="108" stroke="#E8E4CA" stroke-width="0.8" opacity="0.6"/>
+  <line x1="64" y1="114" x2="128" y2="82" stroke="#E8E4CA" stroke-width="0.8" opacity="0.6"/>
+
+  <!-- PARAPET FRONT-LEFT face: (0,72)→(0,64)→(64,96)→(64,104) -->
+  <polygon points="0,72 0,64 64,96 64,104" fill="#123250"/>
+  <!-- PARAPET FRONT-RIGHT face: (64,104)→(128,72)→(128,64)→(64,96) -->
+  <polygon points="64,104 128,72 128,64 64,96" fill="#1A4870"/>
+
+  <!-- FLAT ROOF top face: (0,64)→(64,32)→(128,64)→(64,96) -->
+  <polygon points="0,64 64,32 128,64 64,96" fill="#C8C4B0"/>
+  <!-- Roof detail: HVAC unit shape -->
+  <polygon points="54,54 74,46 74,52 54,60" fill="#A8A498"/>
+  <polygon points="54,60 74,52 74,58 54,66" fill="#B8B4A0"/>
+
+  <!-- WINDOWS left wall -->
+  <!-- Window 1: (8,98)→(24,106)→(24,118)→(8,110) -->
+  <polygon points="8,98 24,106 24,118 8,110" fill="#A8D8EA"/>
+  <polygon points="8,98 24,106 24,118 8,110" fill="none" stroke="#123250" stroke-width="1.2"/>
+  <line x1="16" y1="98" x2="16" y2="118" stroke="#80C0D8" stroke-width="0.8"/>
+  <!-- Window 2 -->
+  <polygon points="30,109 46,117 46,129 30,121" fill="#A8D8EA"/>
+  <polygon points="30,109 46,117 46,129 30,121" fill="none" stroke="#123250" stroke-width="1.2"/>
+  <line x1="38" y1="109" x2="38" y2="129" stroke="#80C0D8" stroke-width="0.8"/>
+
+  <!-- DOOR left wall (glass double door with Moxie Blue frame) -->
+  <polygon points="46,138 62,146 62,160 46,152" fill="#0C77D8" opacity="0.3"/>
+  <polygon points="46,138 62,146 62,160 46,152" fill="none" stroke="#0C77D8" stroke-width="2"/>
+  <line x1="54" y1="138" x2="54" y2="160" stroke="#0C77D8" stroke-width="1.5"/>
+
+  <!-- SIGN on right wall: "MOXIE" blue banner -->
+  <!-- Banner background -->
+  <polygon points="72,112 112,88 112,102 72,126" fill="#0C77D8"/>
+  <!-- M shape (simplified) -->
+  <text x="80" y="120" font-family="Arial, sans-serif" font-size="10" font-weight="bold"
+        fill="white" transform="skewX(-14) translate(-4, 0)" letter-spacing="1">MOXIE</text>
+
+  <!-- WINDOWS right wall -->
+  <polygon points="80,108 96,100 96,112 80,120" fill="#A8D8EA"/>
+  <polygon points="80,108 96,100 96,112 80,120" fill="none" stroke="#123250" stroke-width="1.2"/>
+  <line x1="88" y1="100" x2="88" y2="120" stroke="#80C0D8" stroke-width="0.8"/>
+
+  <!-- OUTLINES -->
+  <!-- Base footprint -->
+  <polygon points="0,128 64,160 128,128 64,96" fill="none" stroke="#0C2840" stroke-width="1.5"/>
+  <!-- Wall vertical edges -->
+  <line x1="0" y1="64" x2="0" y2="128" stroke="#0C2840" stroke-width="2"/>
+  <line x1="128" y1="64" x2="128" y2="128" stroke="#0C2840" stroke-width="2"/>
+  <line x1="64" y1="96" x2="64" y2="160" stroke="#0C2840" stroke-width="1.5"/>
+  <!-- Wall top (below parapet) -->
+  <polyline points="0,72 64,104 128,72" stroke="#0C2840" stroke-width="1.5" fill="none"/>
+  <!-- Parapet top edge -->
+  <polygon points="0,64 64,32 128,64 64,96" fill="none" stroke="#0C2840" stroke-width="2"/>
+  <!-- Back wall top -->
+  <line x1="0" y1="72" x2="64" y2="40" stroke="#0C2840" stroke-width="1.2"/>
+  <line x1="128" y1="72" x2="64" y2="40" stroke="#0C2840" stroke-width="1.2"/>
+  <line x1="64" y1="40" x2="64" y2="32" stroke="#0C2840" stroke-width="1"/>
+</svg>
