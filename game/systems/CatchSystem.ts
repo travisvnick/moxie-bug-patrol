@@ -2,43 +2,54 @@ import * as Phaser from "phaser";
 import { Bug } from "../objects/Bug";
 import { gridToScreen } from "../constants";
 
-// ── Ring dimensions (screen pixels) ───────────────────────────────────────────
-// The ring shrinks from MAX → MIN over PERIOD seconds, then resets.
-// When radius ≤ GREEN_THRESHOLD the ring turns green (= catch window).
-const RING_MAX_RADIUS  = 80;
-const RING_MIN_RADIUS  = 14;
-const RING_PERIOD      = 1.6;  // seconds per pulse cycle
-const GREEN_THRESHOLD  = 38;   // radius at or below = green zone (~35% of cycle)
-const RING_LINE_WIDTH  = 5;
+// ── Static target circle ───────────────────────────────────────────────────────
+// This ring is always visible once a bug is revealed. It represents the "goal".
+// Rarity-colored so players learn difficulty at a glance.
+const STATIC_RADIUS = 48;
 
-// ── Distance thresholds (grid units) ──────────────────────────────────────────
-// GDD: "within ~2 grid tiles" to activate; ring cancels if bug >3 tiles from player.
-const ACTIVATE_DIST = 2.0;
-const CANCEL_DIST   = 3.0;
+// ── Pulsing circle ────────────────────────────────────────────────────────────
+// Oscillates from small → large → small continuously (like Pokémon Go).
+// When pulsing circle radius ≤ STATIC_RADIUS it's "inside" the target = green = catch!
+const PULSE_MIN    = 8;   // smallest the pulsing ring gets
+const PULSE_MAX    = 88;  // largest (always exceeds STATIC_RADIUS)
+const PULSE_PERIOD = 1.8; // seconds per full oscillation
 
-// ── Miss speed boost (GDD §2 Catching) ────────────────────────────────────────
+// ── Catch interaction ─────────────────────────────────────────────────────────
+// Player must be within this many grid tiles to catch.
+const CATCH_DIST = 2.0;
+
+// ── Miss penalty (GDD §2) ─────────────────────────────────────────────────────
 const MISS_SPEED_MULT     = 1.6;
-const MISS_SPEED_DURATION = 2.5;  // seconds
+const MISS_SPEED_DURATION = 2.5;
 
-type CatchState = "idle" | "active";
+// ── Rarity → static ring color ────────────────────────────────────────────────
+const RARITY_COLOR: Record<string, number> = {
+  Common:    0x44DD44,  // green
+  Uncommon:  0xFFCC00,  // yellow
+  Rare:      0xFF6600,  // orange
+  Legendary: 0xFF44FF,  // magenta
+};
+
+interface RingEntry {
+  pulseTime: number;
+}
 
 export class CatchSystem {
   private scene: Phaser.Scene;
-  private state: CatchState = "idle";
-  private targetBug: Bug | null = null;
-  private ringGraphics: Phaser.GameObjects.Graphics;
-  private ringTime: number = 0;
-  private ringRadius: number = RING_MAX_RADIUS;
+  private graphics: Phaser.GameObjects.Graphics;
+  // One ring entry per active (revealed, uncaught) bug
+  private rings: Map<Bug, RingEntry> = new Map();
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
-    this.ringGraphics = scene.add.graphics();
-    this.ringGraphics.setDepth(99990);
+    this.graphics = scene.add.graphics();
+    this.graphics.setDepth(99990);
   }
 
   /**
    * Called every frame from PaloVerdeLane.
-   * catchTapFired is true for exactly one frame (set by InputSystem).
+   * Rings appear automatically when a bug is revealed — no activation tap needed.
+   * One tap when the pulsing circle is inside the target = catch attempt.
    */
   update(
     dt: number,
@@ -47,124 +58,107 @@ export class CatchSystem {
     bugs: Bug[],
     catchTapFired: boolean,
   ): void {
-    if (this.state === "idle") {
-      if (catchTapFired) {
-        this.tryActivate(playerGX, playerGY, bugs);
-      }
-    } else {
-      this.updateActive(dt, playerGX, playerGY, catchTapFired);
-    }
-  }
-
-  // ── Private helpers ──────────────────────────────────────────────────────────
-
-  private tryActivate(playerGX: number, playerGY: number, bugs: Bug[]): void {
-    let closestBug: Bug | null = null;
-    let closestDist = Infinity;
-
+    // Register newly revealed bugs
     for (const bug of bugs) {
-      if (bug.state === "hidden" || bug.caught) continue;
-      const dx = bug.gx - playerGX;
-      const dy = bug.gy - playerGY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < ACTIVATE_DIST && dist < closestDist) {
-        closestBug = bug;
-        closestDist = dist;
+      if (bug.state !== "hidden" && !bug.caught && !this.rings.has(bug)) {
+        this.rings.set(bug, { pulseTime: 0 });
       }
     }
+    // Remove caught bugs
+    for (const bug of this.rings.keys()) {
+      if (bug.caught) this.rings.delete(bug);
+    }
 
-    if (!closestBug) return;
+    // Advance pulse timers
+    for (const [, entry] of this.rings) {
+      entry.pulseTime += dt;
+    }
 
-    this.targetBug = closestBug;
-    this.state = "active";
-    this.ringTime = 0;
-    this.ringRadius = RING_MAX_RADIUS;
-  }
+    // Redraw all rings every frame (bugs move, so position changes)
+    this.graphics.clear();
+    for (const [bug, entry] of this.rings) {
+      this.drawRing(bug, entry);
+    }
 
-  private updateActive(
-    dt: number,
-    playerGX: number,
-    playerGY: number,
-    catchTapFired: boolean,
-  ): void {
-    const bug = this.targetBug!;
+    // Catch tap: find the closest revealed bug within range and evaluate
+    if (catchTapFired && this.rings.size > 0) {
+      let closestBug: Bug | null = null;
+      let closestDist = Infinity;
 
-    // Cancel: bug already caught
-    if (bug.caught) { this.cancel(); return; }
+      for (const bug of this.rings.keys()) {
+        const dx = bug.gx - playerGX;
+        const dy = bug.gy - playerGY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CATCH_DIST && dist < closestDist) {
+          closestBug = bug;
+          closestDist = dist;
+        }
+      }
 
-    // Cancel: bug too far from player (GDD: >3 tiles)
-    const dx = bug.gx - playerGX;
-    const dy = bug.gy - playerGY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist > CANCEL_DIST) { this.cancel(); return; }
-
-    // Advance ring pulse: linear shrink from MAX → MIN, then reset
-    this.ringTime += dt;
-    const t = (this.ringTime % RING_PERIOD) / RING_PERIOD;  // 0 → 1 repeating
-    this.ringRadius = RING_MAX_RADIUS - (RING_MAX_RADIUS - RING_MIN_RADIUS) * t;
-
-    const isGreen = this.ringRadius <= GREEN_THRESHOLD;
-
-    // Draw ring centered on the bug's world position
-    const bugScreen = gridToScreen(bug.gx + 0.5, bug.gy + 0.5);
-    this.ringGraphics.clear();
-    this.ringGraphics.lineStyle(
-      RING_LINE_WIDTH,
-      isGreen ? 0x00FF44 : 0xFFFFFF,
-      isGreen ? 1.0 : 0.85,
-    );
-    this.ringGraphics.strokeCircle(bugScreen.x, bugScreen.y, this.ringRadius);
-
-    // Second tap = catch attempt
-    if (catchTapFired) {
-      if (isGreen) {
-        this.successCatch(bug);
-      } else {
-        this.missCatch(bug);
+      if (closestBug) {
+        const entry = this.rings.get(closestBug)!;
+        const pulseRadius = this.calcPulseRadius(entry.pulseTime);
+        if (pulseRadius <= STATIC_RADIUS) {
+          this.successCatch(closestBug);
+        } else {
+          this.missCatch(closestBug);
+        }
       }
     }
   }
+
+  // ── Ring drawing ─────────────────────────────────────────────────────────────
+
+  private drawRing(bug: Bug, entry: RingEntry): void {
+    const { x, y } = gridToScreen(bug.gx + 0.5, bug.gy + 0.5);
+    const pulseRadius = this.calcPulseRadius(entry.pulseTime);
+    const inWindow    = pulseRadius <= STATIC_RADIUS;
+    const rarityColor = RARITY_COLOR[bug.species.rarity] ?? RARITY_COLOR.Common;
+
+    // Static target circle — rarity color, always visible
+    this.graphics.lineStyle(4, rarityColor, 0.9);
+    this.graphics.strokeCircle(x, y, STATIC_RADIUS);
+
+    // Pulsing circle — white outside, green inside the target
+    this.graphics.lineStyle(3, inWindow ? 0x00FF44 : 0xFFFFFF, inWindow ? 1.0 : 0.7);
+    this.graphics.strokeCircle(x, y, pulseRadius);
+  }
+
+  // Sine-wave oscillation: PULSE_MIN → PULSE_MAX → PULSE_MIN over one period
+  private calcPulseRadius(pulseTime: number): number {
+    const t = (pulseTime % PULSE_PERIOD) / PULSE_PERIOD; // 0..1
+    return PULSE_MIN + (PULSE_MAX - PULSE_MIN) * 0.5 * (1 - Math.cos(t * Math.PI * 2));
+  }
+
+  // ── Catch outcomes ────────────────────────────────────────────────────────────
 
   private successCatch(bug: Bug): void {
-    this.ringGraphics.clear();
-    this.state = "idle";
-    this.targetBug = null;
+    const { x, y } = gridToScreen(bug.gx + 0.5, bug.gy + 0.5);
+    this.rings.delete(bug);
     bug.catch();
-    this.spawnSparkles(bug.gx, bug.gy);
+    this.spawnSparkles(x, y);
   }
 
   private missCatch(bug: Bug): void {
-    const savedRadius = this.ringRadius;
-    const bugPos = gridToScreen(bug.gx + 0.5, bug.gy + 0.5);
-    this.ringGraphics.clear();
-    this.state = "idle";
-    this.targetBug = null;
+    const { x, y } = gridToScreen(bug.gx + 0.5, bug.gy + 0.5);
     bug.applySpeedBoost(MISS_SPEED_MULT, MISS_SPEED_DURATION);
-    this.flashMissRing(bugPos.x, bugPos.y, savedRadius);
+    this.flashMissRing(x, y);
   }
 
-  private cancel(): void {
-    this.ringGraphics.clear();
-    this.state = "idle";
-    this.targetBug = null;
-  }
+  // ── Visual effects ────────────────────────────────────────────────────────────
 
-  // ── Visual effects ───────────────────────────────────────────────────────────
-
-  /** Sparkle burst of colored circles radiating outward on a successful catch. */
-  private spawnSparkles(gx: number, gy: number): void {
-    const { x, y } = gridToScreen(gx + 0.5, gy + 0.5);
+  private spawnSparkles(x: number, y: number): void {
     const colors = [0xFFD700, 0xFF69B4, 0x00FFFF, 0xFFFFFF, 0x0C77D8, 0xFF8C00];
-    const count = 12;
+    const count  = 12;
 
     for (let i = 0; i < count; i++) {
-      const angle = (i / count) * Math.PI * 2;
+      const angle  = (i / count) * Math.PI * 2;
       const circle = this.scene.add.arc(x, y, 5, 0, 360, false, colors[i % colors.length]);
       circle.setDepth(99995);
       this.scene.tweens.add({
         targets: circle,
-        x: x + Math.cos(angle) * 70,
-        y: y + Math.sin(angle) * 70,
+        x: x + Math.cos(angle) * 72,
+        y: y + Math.sin(angle) * 72,
         alpha: 0,
         duration: 520,
         ease: "Power2.easeOut",
@@ -173,29 +167,29 @@ export class CatchSystem {
     }
 
     // Central white burst
-    const burst = this.scene.add.arc(x, y, 18, 0, 360, false, 0xFFFFFF, 0.8);
+    const burst = this.scene.add.arc(x, y, 20, 0, 360, false, 0xFFFFFF, 0.85);
     burst.setDepth(99994);
     this.scene.tweens.add({
       targets: burst,
-      scaleX: 2.5,
-      scaleY: 2.5,
+      scaleX: 2.8,
+      scaleY: 2.8,
       alpha: 0,
-      duration: 350,
+      duration: 360,
       ease: "Power2.easeOut",
       onComplete: () => burst.destroy(),
     });
   }
 
-  /** Brief red ring flash on a miss so the player gets clear feedback. */
-  private flashMissRing(x: number, y: number, radius: number): void {
+  /** Brief red flash of the static circle so the player sees they missed. */
+  private flashMissRing(x: number, y: number): void {
     const g = this.scene.add.graphics();
     g.setDepth(99991);
-    g.lineStyle(RING_LINE_WIDTH, 0xFF3333, 1.0);
-    g.strokeCircle(x, y, radius);
+    g.lineStyle(4, 0xFF3333, 1.0);
+    g.strokeCircle(x, y, STATIC_RADIUS);
     this.scene.tweens.add({
       targets: g,
       alpha: 0,
-      duration: 320,
+      duration: 340,
       onComplete: () => g.destroy(),
     });
   }
