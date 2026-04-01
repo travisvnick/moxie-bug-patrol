@@ -7,6 +7,7 @@ import { MapRenderer }    from "../map/MapRenderer";
 import { BorderRenderer } from "../map/BorderRenderer";
 import { InputSystem }    from "../systems/InputSystem";
 import { CameraSystem }  from "../systems/CameraSystem";
+import { SpawnSystem }   from "../systems/SpawnSystem";
 
 // Player moves at 160 px/s in screen space — constant visual speed in any direction.
 const PLAYER_SCREEN_SPEED = 160;
@@ -26,6 +27,7 @@ const GAP_MAX = 12;
 export default class PaloVerdeLane extends Phaser.Scene {
   private inputSystem!: InputSystem;
   private cameraSystem!: CameraSystem;
+  private spawnSystem!: SpawnSystem;
   private playerSprite!: Phaser.GameObjects.Image;
   private playerGX: number = PLAYER_START_X;
   private playerGY: number = PLAYER_START_Y;
@@ -37,6 +39,7 @@ export default class PaloVerdeLane extends Phaser.Scene {
   preload(): void {
     MapRenderer.preload(this);
     BorderRenderer.preload(this);
+    SpawnSystem.preload(this);
     this.load.svg("player", "/sprites/player.svg", { width: 48, height: 88 });
   }
 
@@ -55,14 +58,17 @@ export default class PaloVerdeLane extends Phaser.Scene {
 
     this.inputSystem  = new InputSystem(this);
     this.cameraSystem = new CameraSystem(this);
+    this.spawnSystem  = new SpawnSystem(this);
 
     // Snap camera to player on creation
     this.cameraSystem.update(this.playerGX, this.playerGY);
   }
 
   update(_time: number, delta: number): void {
+    const dt = delta / 1000;
     this.inputSystem.update();
     this.movePlayer(delta);
+    this.spawnSystem.update(this.playerGX, this.playerGY, dt);
     this.cameraSystem.update(this.playerGX, this.playerGY);
   }
 
