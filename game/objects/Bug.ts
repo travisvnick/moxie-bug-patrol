@@ -12,11 +12,11 @@ export interface BugSpecies {
   rarity: "Common" | "Uncommon" | "Rare" | "Legendary";
 }
 
-// Shades the Cockroach — skitters unpredictably, bolts when cornered
+// Shades the Cockroach — skitters fast, bolts the moment you get near
 export const SHADES_SPECIES: BugSpecies = {
   key: "shades",
-  wanderSpeed: 1.5,
-  fleeSpeed: 3.4,
+  wanderSpeed: 2.2,
+  fleeSpeed: 5.0,
   name: "Shades",
   funFact: "Cockroaches can hold their breath for 40 minutes and survive a week without their head!",
   rarity: "Common",
@@ -26,8 +26,8 @@ const BOUNDS_MIN = 1.5;
 const BOUNDS_MAX = GRID_SIZE - 2.5;
 
 // Distance thresholds (grid units)
-const FLEE_START_DIST = 3.0;
-const FLEE_STOP_DIST  = 4.2;
+const FLEE_START_DIST = 4.0;  // starts bolting sooner
+const FLEE_STOP_DIST  = 6.0;  // keeps running until well clear
 
 export class Bug {
   public gx: number;
