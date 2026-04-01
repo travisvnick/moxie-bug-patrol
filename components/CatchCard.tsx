@@ -101,7 +101,7 @@ export default function CatchCard() {
             lineHeight: 1.2,
           }}
         >
-          {card.name} Caught!
+          You caught {card.name}!
         </h2>
 
         {/* Species type — small subtitle */}
@@ -113,7 +113,7 @@ export default function CatchCard() {
             fontStyle: "italic",
           }}
         >
-          the {card.speciesType}
+          the {card.speciesType.toLowerCase()}
         </p>
 
         {/* SVG illustration */}
