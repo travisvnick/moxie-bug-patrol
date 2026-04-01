@@ -64,9 +64,9 @@ export class CatchSystem {
         this.rings.set(bug, { pulseTime: 0 });
       }
     }
-    // Remove caught bugs
+    // Remove rings for bugs that are caught or have re-hidden
     for (const bug of this.rings.keys()) {
-      if (bug.caught) this.rings.delete(bug);
+      if (bug.caught || bug.state === "hidden") this.rings.delete(bug);
     }
 
     // Advance pulse timers
