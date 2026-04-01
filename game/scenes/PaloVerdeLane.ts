@@ -5,6 +5,7 @@ import {
 } from "../constants";
 import { MapRenderer }    from "../map/MapRenderer";
 import { BorderRenderer } from "../map/BorderRenderer";
+import { ExitZones }      from "../map/ExitZones";
 import { InputSystem }    from "../systems/InputSystem";
 import { CameraSystem }  from "../systems/CameraSystem";
 import { SpawnSystem }   from "../systems/SpawnSystem";
@@ -31,6 +32,7 @@ export default class PaloVerdeLane extends Phaser.Scene {
   private cameraSystem!: CameraSystem;
   private spawnSystem!: SpawnSystem;
   private catchSystem!: CatchSystem;
+  private exitZones!: ExitZones;
   private playerSprite!: Phaser.GameObjects.Image;
   private playerGX: number = PLAYER_START_X;
   private playerGY: number = PLAYER_START_Y;
@@ -63,6 +65,8 @@ export default class PaloVerdeLane extends Phaser.Scene {
     this.cameraSystem = new CameraSystem(this);
     this.spawnSystem  = new SpawnSystem(this);
     this.catchSystem  = new CatchSystem(this);
+    this.exitZones    = new ExitZones(this);
+    this.exitZones.create();
 
     // Snap camera to player on creation
     this.cameraSystem.update(this.playerGX, this.playerGY);
@@ -90,6 +94,11 @@ export default class PaloVerdeLane extends Phaser.Scene {
     this.movePlayer(delta);
     this.spawnSystem.update(this.playerGX, this.playerGY, dt);
     this.cameraSystem.update(this.playerGX, this.playerGY);
+
+    // Check exit zones — reload same scene for now (placeholder for multi-zone nav)
+    if (this.exitZones.update(this.playerGX, this.playerGY)) {
+      this.scene.restart();
+    }
   }
 
   // ── Player movement ───────────────────────────────────────────────────────────
