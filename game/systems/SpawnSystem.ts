@@ -37,6 +37,11 @@ export class SpawnSystem {
     scene.load.svg("shades", "/sprites/shades.svg", { width: 40, height: 40 });
   }
 
+  /** Returns the list of currently active (revealed) bugs. */
+  getBugs(): Bug[] {
+    return this.bugs;
+  }
+
   update(playerGX: number, playerGY: number, dt: number): void {
     // Check proximity to untriggered spawn points
     for (const entry of this.entries) {

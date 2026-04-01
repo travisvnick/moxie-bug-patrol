@@ -34,6 +34,7 @@ export class Bug {
   public gy: number;
   public state: BugState = "hidden";
   public species: BugSpecies;
+  public caught: boolean = false;
 
   private scene: Phaser.Scene;
   private sprite: Phaser.GameObjects.Image | null = null;
@@ -42,6 +43,10 @@ export class Bug {
   private dirX: number = 0;
   private dirY: number = 0;
   private dirTimer: number = 0;
+
+  // Speed boost after a miss (GDD: 1.6x for 2.5s)
+  private speedMultiplier: number = 1.0;
+  private speedBoostTimer: number = 0;
 
   constructor(scene: Phaser.Scene, gx: number, gy: number, species: BugSpecies) {
     this.scene = scene;
@@ -93,8 +98,32 @@ export class Bug {
     this.pickWanderDir();
   }
 
+  /** Mark bug as caught and remove its sprite. */
+  catch(): void {
+    this.caught = true;
+    if (this.sprite) {
+      this.sprite.destroy();
+      this.sprite = null;
+    }
+  }
+
+  /** Temporarily boost flee/wander speed after a miss. */
+  applySpeedBoost(multiplier: number, duration: number): void {
+    this.speedMultiplier = multiplier;
+    this.speedBoostTimer = duration;
+  }
+
   update(dt: number, playerGX: number, playerGY: number): void {
-    if (this.state === "hidden") return;
+    if (this.state === "hidden" || this.caught) return;
+
+    // Decay speed boost
+    if (this.speedBoostTimer > 0) {
+      this.speedBoostTimer -= dt;
+      if (this.speedBoostTimer <= 0) {
+        this.speedMultiplier = 1.0;
+        this.speedBoostTimer = 0;
+      }
+    }
 
     const dx = this.gx - playerGX;
     const dy = this.gy - playerGY;
@@ -125,8 +154,8 @@ export class Bug {
     this.dirTimer -= dt;
     if (this.dirTimer <= 0) this.pickWanderDir();
 
-    this.gx += this.dirX * this.species.wanderSpeed * dt;
-    this.gy += this.dirY * this.species.wanderSpeed * dt;
+    this.gx += this.dirX * this.species.wanderSpeed * this.speedMultiplier * dt;
+    this.gy += this.dirY * this.species.wanderSpeed * this.speedMultiplier * dt;
     this.clampToBounds();
   }
 
@@ -137,8 +166,8 @@ export class Bug {
     if (len > 0) {
       this.dirX = dx / len;
       this.dirY = dy / len;
-      this.gx += this.dirX * this.species.fleeSpeed * dt;
-      this.gy += this.dirY * this.species.fleeSpeed * dt;
+      this.gx += this.dirX * this.species.fleeSpeed * this.speedMultiplier * dt;
+      this.gy += this.dirY * this.species.fleeSpeed * this.speedMultiplier * dt;
     }
     this.clampToBounds();
   }
