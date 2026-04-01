@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- Antennae (long, elegant) -->
+  <path d="M19 9 Q14 4 10 2" stroke="#1A5C1A" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  <path d="M29 9 Q34 4 38 2" stroke="#1A5C1A" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  <circle cx="10" cy="2" r="1.2" fill="#2A8C2A"/>
+  <circle cx="38" cy="2" r="1.2" fill="#2A8C2A"/>
+
+  <!-- Legs left (3 legs) -->
+  <line x1="16" y1="24" x2="5"  y2="19" stroke="#1A5C1A" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="14" y1="30" x2="3"  y2="30" stroke="#1A5C1A" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="16" y1="36" x2="6"  y2="42" stroke="#1A5C1A" stroke-width="1.4" stroke-linecap="round"/>
+
+  <!-- Legs right (3 legs) -->
+  <line x1="32" y1="24" x2="43" y2="19" stroke="#1A5C1A" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="34" y1="30" x2="45" y2="30" stroke="#1A5C1A" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="32" y1="36" x2="42" y2="42" stroke="#1A5C1A" stroke-width="1.4" stroke-linecap="round"/>
+
+  <!-- Elytra (wing cases) — big rounded body, iridescent green -->
+  <ellipse cx="24" cy="32" rx="13" ry="10" fill="#2A7A2A"/>
+  <!-- Iridescent sheen gradient fakes -->
+  <ellipse cx="20" cy="27" rx="6" ry="4" fill="#50C878" opacity="0.45"/>
+  <ellipse cx="28" cy="36" rx="5" ry="3" fill="#7FFFD4" opacity="0.30"/>
+  <!-- Wing seam down the middle -->
+  <line x1="24" y1="22" x2="24" y2="42" stroke="#1A5C1A" stroke-width="1.0" opacity="0.7"/>
+  <!-- Wing texture lines -->
+  <path d="M16 26 Q20 24 24 26" stroke="#1A5C1A" stroke-width="0.6" fill="none" opacity="0.4"/>
+  <path d="M24 26 Q28 24 32 26" stroke="#1A5C1A" stroke-width="0.6" fill="none" opacity="0.4"/>
+
+  <!-- Pronotum (thorax shield) -->
+  <ellipse cx="24" cy="20" rx="11" ry="6" fill="#38A038"/>
+  <!-- Pronotum sheen -->
+  <ellipse cx="21" cy="17.5" rx="5" ry="2.5" fill="#60D060" opacity="0.4"/>
+
+  <!-- Head -->
+  <ellipse cx="24" cy="12" rx="8" ry="6" fill="#2E8C2E"/>
+
+  <!-- Big round eyes -->
+  <circle cx="19" cy="10" r="3.5" fill="white" stroke="#1A5C1A" stroke-width="0.6"/>
+  <circle cx="29" cy="10" r="3.5" fill="white" stroke="#1A5C1A" stroke-width="0.6"/>
+  <circle cx="19.5" cy="10.5" r="2.0" fill="#0A1A0A"/>
+  <circle cx="29.5" cy="10.5" r="2.0" fill="#0A1A0A"/>
+  <circle cx="20"   cy="9.5"  r="0.9" fill="white"/>
+  <circle cx="30"   cy="9.5"  r="0.9" fill="white"/>
+
+  <!-- Tiny DJ headphones -->
+  <path d="M14 9 Q14 5 19 5 Q24 5 29 5 Q34 5 34 9" stroke="#111111" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <rect x="12" y="8"  width="4" height="4" rx="2" fill="#111111"/>
+  <rect x="32" y="8"  width="4" height="4" rx="2" fill="#111111"/>
+  <!-- Headphone pads (silver) -->
+  <circle cx="14" cy="10" r="1.5" fill="#888888"/>
+  <circle cx="34" cy="10" r="1.5" fill="#888888"/>
+
+  <!-- Musical note floating -->
+  <text x="37" y="20" font-size="7" fill="#FFD700" font-family="sans-serif" opacity="0.9">♪</text>
+</svg>

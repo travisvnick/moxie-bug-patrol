@@ -1,5 +1,12 @@
 import * as Phaser from "phaser";
-import { Bug, BugSpecies, SHADES_SPECIES } from "../objects/Bug";
+import {
+  Bug, BugSpecies,
+  SHADES_SPECIES,
+  DUSTY_SPECIES,
+  DJ_BEETLE_SPECIES,
+  NEON_MOTH_SPECIES,
+  TINY_TIM_SPECIES,
+} from "../objects/Bug";
 
 const REVEAL_RADIUS = 1.5;
 
@@ -11,8 +18,19 @@ interface SpawnEntry {
   activeBug: Bug | null;
 }
 
+// All spawn points are 3+ grid tiles from player start (10, 10).
+// Placed near thematic objects: rocks, cacti, trees, bushes, houses.
 const SPAWN_ENTRIES: SpawnEntry[] = [
-  { cx: 4.5, cy: 13.5, species: SHADES_SPECIES, triggered: false, activeBug: null },
+  // Shades — near rock pile at (4, 13)
+  { cx: 4.5,  cy: 13.5, species: SHADES_SPECIES,    triggered: false, activeBug: null },
+  // Dusty — near rock pile at (16, 5)
+  { cx: 16.5, cy: 5.5,  species: DUSTY_SPECIES,     triggered: false, activeBug: null },
+  // DJ Beetle — near palo verde tree at (13, 4)
+  { cx: 13.5, cy: 4.5,  species: DJ_BEETLE_SPECIES,  triggered: false, activeBug: null },
+  // Neon Moth — near house at (15, 13), drawn to the porch light
+  { cx: 17.5, cy: 13.5, species: NEON_MOTH_SPECIES,  triggered: false, activeBug: null },
+  // Tiny Tim — near bush at (2, 10), hauling crumbs from the yard
+  { cx: 2.5,  cy: 9.5,  species: TINY_TIM_SPECIES,   triggered: false, activeBug: null },
 ];
 
 export class SpawnSystem {
@@ -26,7 +44,11 @@ export class SpawnSystem {
   }
 
   static preload(scene: Phaser.Scene): void {
-    scene.load.svg("shades", "/sprites/shades.svg", { width: 40, height: 40 });
+    scene.load.svg("shades",     "/sprites/shades.svg",     { width: 40, height: 40 });
+    scene.load.svg("dusty",      "/sprites/dusty.svg",      { width: 40, height: 40 });
+    scene.load.svg("dj-beetle",  "/sprites/dj-beetle.svg",  { width: 48, height: 48 });
+    scene.load.svg("neon-moth",  "/sprites/neon-moth.svg",  { width: 44, height: 44 });
+    scene.load.svg("tiny-tim",   "/sprites/tiny-tim.svg",   { width: 36, height: 36 });
   }
 
   getBugs(): Bug[] {

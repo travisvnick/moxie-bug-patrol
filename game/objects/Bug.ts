@@ -11,6 +11,7 @@ export interface BugSpecies {
   speciesType: string;  // display label, e.g. "Cockroach"
   funFact: string;
   rarity: "Common" | "Uncommon" | "Rare" | "Legendary";
+  spriteScale?: number; // optional render scale (default 1.0)
 }
 
 // Shades the Cockroach — skitters away, but re-hides if you don't catch him quick
@@ -22,6 +23,51 @@ export const SHADES_SPECIES: BugSpecies = {
   speciesType: "Cockroach",
   funFact: "Cockroaches can hold their breath for 40 minutes and survive a week without their head!",
   rarity: "Common",
+};
+
+// Dusty the Bark Scorpion — more scared of you than you are of him, scurries fast
+export const DUSTY_SPECIES: BugSpecies = {
+  key: "dusty",
+  wanderSpeed: 1.8,
+  fleeSpeed: 3.8,
+  name: "Dusty",
+  speciesType: "Bark Scorpion",
+  funFact: "Bark scorpions glow bright blue under UV light. That's how real pest techs find them at night!",
+  rarity: "Common",
+};
+
+// DJ Beetle — big, slow, impressive palo verde beetle with iridescent wings
+export const DJ_BEETLE_SPECIES: BugSpecies = {
+  key: "dj-beetle",
+  wanderSpeed: 0.8,
+  fleeSpeed: 1.8,
+  name: "DJ Beetle",
+  speciesType: "Palo Verde Beetle",
+  funFact: "Palo verde beetles can grow up to 4 inches long — one of the biggest beetles in North America!",
+  rarity: "Uncommon",
+};
+
+// Neon Moth — pulsing neon wings, medium speed, only appears at dusk
+export const NEON_MOTH_SPECIES: BugSpecies = {
+  key: "neon-moth",
+  wanderSpeed: 1.2,
+  fleeSpeed: 2.6,
+  name: "Neon Moth",
+  speciesType: "Neon Moth",
+  funFact: "Some moths navigate by moonlight and can detect a single pheromone molecule from miles away!",
+  rarity: "Uncommon",
+};
+
+// Tiny Tim the Ant — world's smallest harvester ant, 0.6x scale, very fast
+export const TINY_TIM_SPECIES: BugSpecies = {
+  key: "tiny-tim",
+  wanderSpeed: 2.2,
+  fleeSpeed: 4.5,
+  name: "Tiny Tim",
+  speciesType: "Harvester Ant",
+  funFact: "Harvester ants can carry 50 times their own body weight. That's like you lifting a car!",
+  rarity: "Common",
+  spriteScale: 0.6,
 };
 
 const BOUNDS_MIN = 1.5;
@@ -93,11 +139,12 @@ export class Bug {
     this.sprite.setOrigin(0.5, 1.0);
     this.sprite.setDepth(this.calcDepth());
 
+    const targetScale = this.species.spriteScale ?? 1.0;
     this.sprite.setScale(0);
     this.scene.tweens.add({
       targets: this.sprite,
-      scaleX: 1,
-      scaleY: 1,
+      scaleX: targetScale,
+      scaleY: targetScale,
       duration: 250,
       ease: "Back.easeOut",
     });

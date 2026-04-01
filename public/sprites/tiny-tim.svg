@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- Oversized seed/grain being carried (much bigger than the ant) -->
+  <ellipse cx="24" cy="10" rx="9" ry="5.5" fill="#C8A040" transform="rotate(-10 24 10)"/>
+  <ellipse cx="23" cy="9"  rx="5" ry="3"   fill="#E0B850" opacity="0.6" transform="rotate(-10 23 9)"/>
+  <!-- Seed highlight -->
+  <ellipse cx="21" cy="7.5" rx="2.5" ry="1.2" fill="#F0D070" opacity="0.5" transform="rotate(-10 21 7.5)"/>
+
+  <!-- Ant carrying arms (mandibles gripping the seed) -->
+  <path d="M21 22 Q19 16 18 12" stroke="#5C2A0A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M27 22 Q29 16 30 12" stroke="#5C2A0A" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Antennae -->
+  <path d="M22 26 Q18 22 15 20" stroke="#5C2A0A" stroke-width="1.0" fill="none" stroke-linecap="round"/>
+  <path d="M26 26 Q30 22 33 20" stroke="#5C2A0A" stroke-width="1.0" fill="none" stroke-linecap="round"/>
+  <circle cx="15" cy="20" r="1.0" fill="#8C4A1A"/>
+  <circle cx="33" cy="20" r="1.0" fill="#8C4A1A"/>
+
+  <!-- Legs left (3) -->
+  <line x1="20" y1="33" x2="13" y2="29" stroke="#5C2A0A" stroke-width="1.1" stroke-linecap="round"/>
+  <line x1="19" y1="36" x2="11" y2="36" stroke="#5C2A0A" stroke-width="1.1" stroke-linecap="round"/>
+  <line x1="20" y1="39" x2="13" y2="43" stroke="#5C2A0A" stroke-width="1.1" stroke-linecap="round"/>
+
+  <!-- Legs right (3) -->
+  <line x1="28" y1="33" x2="35" y2="29" stroke="#5C2A0A" stroke-width="1.1" stroke-linecap="round"/>
+  <line x1="29" y1="36" x2="37" y2="36" stroke="#5C2A0A" stroke-width="1.1" stroke-linecap="round"/>
+  <line x1="28" y1="39" x2="35" y2="43" stroke="#5C2A0A" stroke-width="1.1" stroke-linecap="round"/>
+
+  <!-- Abdomen (gaster — rounded rear) -->
+  <ellipse cx="24" cy="40" rx="6" ry="5" fill="#7A3810"/>
+  <ellipse cx="23" cy="38" rx="3" ry="2" fill="#9A5028" opacity="0.5"/>
+
+  <!-- Petiole (waist node) -->
+  <ellipse cx="24" cy="35" rx="2.5" ry="2" fill="#6A3010"/>
+
+  <!-- Thorax -->
+  <ellipse cx="24" cy="31" rx="4.5" ry="3.5" fill="#8A4018"/>
+  <ellipse cx="23" cy="30" rx="2.2" ry="1.5" fill="#AA5828" opacity="0.45"/>
+
+  <!-- Head -->
+  <ellipse cx="24" cy="25" rx="5" ry="4.5" fill="#9A4A20"/>
+
+  <!-- Big determined eyes -->
+  <circle cx="21" cy="24" r="2.5" fill="white" stroke="#5C2A0A" stroke-width="0.5"/>
+  <circle cx="27" cy="24" r="2.5" fill="white" stroke="#5C2A0A" stroke-width="0.5"/>
+  <circle cx="21.5" cy="24.5" r="1.4" fill="#1A0A04"/>
+  <circle cx="27.5" cy="24.5" r="1.4" fill="#1A0A04"/>
+  <circle cx="22"   cy="24"   r="0.6" fill="white"/>
+  <circle cx="28"   cy="24"   r="0.6" fill="white"/>
+  <!-- Determined furrowed brow -->
+  <path d="M19 22 Q21 21 23 22" stroke="#5C2A0A" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+  <path d="M25 22 Q27 21 29 22" stroke="#5C2A0A" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+
+  <!-- Mandibles -->
+  <path d="M21 27 Q18 29 17 28" stroke="#5C2A0A" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+  <path d="M27 27 Q30 29 31 28" stroke="#5C2A0A" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+</svg>
