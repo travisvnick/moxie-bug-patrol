@@ -11,8 +11,9 @@ import { GRID_SIZE } from "../constants";
  */
 
 // Half-width of the entity's collision box along each axis.
-const PLAYER_HW = 0.25;
-const BUG_HW = 0.2;
+// Smaller values let the player navigate tighter gaps between obstacles.
+const PLAYER_HW = 0.15;
+const BUG_HW = 0.15;
 
 // Singleton grid — rebuilt every time the scene creates (restart-safe).
 let grid: boolean[][] = [];

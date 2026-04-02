@@ -198,7 +198,14 @@ export default class PaloVerdeLane extends Phaser.Scene {
     // Check if player is in an exit gap — if so, allow free movement
     // (exit gap border tiles are not registered as blocked).
     // Beyond the grid edge, skip collision so the exit zone transition works.
+    // North/west exits: the player probe hits out-of-bounds before rawGX/rawGY
+    // can go negative, so also bypass when inside the gap and within 1 tile of
+    // the border edge.
+    const EXIT_GAP_MIN = 8, EXIT_GAP_MAX = 12;
+    const nearNorthExit = rawGY <= 1 && rawGX >= EXIT_GAP_MIN && rawGX <= EXIT_GAP_MAX;
+    const nearWestExit  = rawGX <= 1 && rawGY >= EXIT_GAP_MIN && rawGY <= EXIT_GAP_MAX;
     const inExitArea =
+      nearNorthExit || nearWestExit ||
       rawGX < 0 || rawGX >= GRID_SIZE - 1 || rawGY < 0;
 
     if (inExitArea) {
