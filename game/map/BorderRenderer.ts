@@ -71,8 +71,8 @@ export class BorderRenderer {
         const tile = this.scene.add.graphics();
         tile.setDepth(100 + (gx + 1 + gy + 1) * 50 + gx + 1);
 
-        // Ground tile — dark rocky
-        tile.fillStyle(0x8B7355, 1);
+        // Ground tile — warm desert adobe
+        tile.fillStyle(0xC4A870, 1);
         tile.fillPoints([
           { x,          y           },
           { x: x + tw2, y: y + th2  },
@@ -80,8 +80,8 @@ export class BorderRenderer {
           { x: x - tw2, y: y + th2  },
         ], true);
 
-        // Right wall face (lighter)
-        tile.fillStyle(0x9B8265, 1);
+        // Right wall face (sun-facing, lighter warm tan)
+        tile.fillStyle(0xD4B882, 1);
         tile.fillPoints([
           { x,          y: y + TILE_HEIGHT        },
           { x: x + tw2, y: y + th2                },
@@ -89,8 +89,8 @@ export class BorderRenderer {
           { x,          y: y + TILE_HEIGHT - wallH },
         ], true);
 
-        // Left wall face (darker)
-        tile.fillStyle(0x7A6550, 1);
+        // Left wall face (shaded, darker warm tan)
+        tile.fillStyle(0xA89060, 1);
         tile.fillPoints([
           { x: x - tw2, y: y + th2                },
           { x,          y: y + TILE_HEIGHT        },
@@ -98,8 +98,8 @@ export class BorderRenderer {
           { x: x - tw2, y: y + th2    - wallH     },
         ], true);
 
-        // Top face (lightest — lit from above)
-        tile.fillStyle(0xB09070, 1);
+        // Top face (lightest — lit from above, warm cream)
+        tile.fillStyle(0xE8CC90, 1);
         tile.fillPoints([
           { x: x,          y: y            - wallH },
           { x: x + tw2,    y: y + th2      - wallH },
@@ -107,15 +107,15 @@ export class BorderRenderer {
           { x: x - tw2,    y: y + th2      - wallH },
         ], true);
 
-        // Rock texture dots
-        tile.fillStyle(0x6B5540, 0.45);
-        tile.fillCircle(x - 10, y + th2 - wallH / 2, 3);
-        tile.fillCircle(x + 8,  y + TILE_HEIGHT - wallH * 0.55, 2.5);
-        tile.fillStyle(0xC0A880, 0.3);
-        tile.fillCircle(x + tw2 - 14, y + th2 - wallH * 0.75, 2);
+        // Adobe texture — subtle shadow dots
+        tile.fillStyle(0x8B6A40, 0.35);
+        tile.fillCircle(x - 10, y + th2 - wallH / 2, 2.5);
+        tile.fillCircle(x + 8,  y + TILE_HEIGHT - wallH * 0.55, 2);
+        tile.fillStyle(0xF0D8A0, 0.25);
+        tile.fillCircle(x + tw2 - 14, y + th2 - wallH * 0.75, 1.8);
 
         // Outline
-        tile.lineStyle(1, 0x5A4535, 0.7);
+        tile.lineStyle(1, 0x7A5C30, 0.65);
         tile.strokePoints([
           { x: x,          y: y            - wallH },
           { x: x + tw2,    y: y + th2      - wallH },

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="32" viewBox="0 0 64 32">
+  <!-- Base sandy diamond -->
+  <polygon points="32,0 64,16 32,32 0,16" fill="#DEB882"/>
+  <!-- Upper half highlight (lit from above) -->
+  <polygon points="32,0 64,16 32,16 0,16" fill="#E8C890" opacity="0.28"/>
+  <!-- Subtle grain lines following left slope -->
+  <line x1="12" y1="6" x2="22" y2="11" stroke="#C9A86B" stroke-width="0.6" opacity="0.5"/>
+  <line x1="18" y1="3" x2="28" y2="8" stroke="#C9A86B" stroke-width="0.6" opacity="0.4"/>
+  <line x1="6"  y1="20" x2="18" y2="26" stroke="#C9A86B" stroke-width="0.5" opacity="0.35"/>
+  <!-- Subtle grain lines following right slope -->
+  <line x1="42" y1="3" x2="52" y2="8" stroke="#C9A86B" stroke-width="0.6" opacity="0.4"/>
+  <line x1="48" y1="6" x2="58" y2="11" stroke="#C9A86B" stroke-width="0.5" opacity="0.35"/>
+  <!-- Clip to diamond shape -->
+  <polygon points="32,0 64,16 32,32 0,16" fill="none"/>
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="32" viewBox="0 0 64 32">
+  <!-- Base sandy diamond -->
+  <polygon points="32,0 64,16 32,32 0,16" fill="#DEB882"/>
+  <!-- Upper half highlight -->
+  <polygon points="32,0 64,16 32,16 0,16" fill="#E8C890" opacity="0.28"/>
+  <!-- Subtle grain lines -->
+  <line x1="14" y1="5" x2="24" y2="10" stroke="#C9A86B" stroke-width="0.6" opacity="0.4"/>
+  <line x1="44" y1="4" x2="54" y2="9"  stroke="#C9A86B" stroke-width="0.5" opacity="0.35"/>
+  <line x1="8"  y1="21" x2="16" y2="25" stroke="#C9A86B" stroke-width="0.5" opacity="0.3"/>
+  <!-- Crack — jagged path from upper-center toward lower-left -->
+  <path d="M33,8 L30,13 L34,17 L28,24" stroke="#B8946A" stroke-width="1"
+        fill="none" opacity="0.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Crack shadow (1px offset for depth) -->
+  <path d="M34,8 L31,13 L35,17 L29,24" stroke="#ECC890" stroke-width="0.7"
+        fill="none" opacity="0.25" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

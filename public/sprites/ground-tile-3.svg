@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="32" viewBox="0 0 64 32">
+  <!-- Base sandy diamond -->
+  <polygon points="32,0 64,16 32,32 0,16" fill="#DEB882"/>
+  <!-- Upper half highlight -->
+  <polygon points="32,0 64,16 32,16 0,16" fill="#E8C890" opacity="0.28"/>
+  <!-- Subtle grain lines -->
+  <line x1="16" y1="6" x2="26" y2="11" stroke="#C9A86B" stroke-width="0.6" opacity="0.4"/>
+  <line x1="46" y1="5" x2="56" y2="10" stroke="#C9A86B" stroke-width="0.5" opacity="0.35"/>
+  <!-- Pebble cluster -->
+  <ellipse cx="22" cy="14" rx="2.5" ry="1.8" fill="#C9A86B" opacity="0.55"/>
+  <ellipse cx="27" cy="17" rx="1.8" ry="1.3" fill="#B89A60" opacity="0.5"/>
+  <ellipse cx="42" cy="20" rx="2"   ry="1.5" fill="#C9A86B" opacity="0.5"/>
+  <ellipse cx="46" cy="14" rx="1.5" ry="1.1" fill="#B89A60" opacity="0.45"/>
+  <ellipse cx="18" cy="22" rx="1.5" ry="1"   fill="#C9A86B" opacity="0.4"/>
+  <!-- Pebble highlights -->
+  <ellipse cx="21" cy="13" rx="1"   ry="0.7" fill="#EED89A" opacity="0.4"/>
+  <ellipse cx="41" cy="19" rx="0.8" ry="0.6" fill="#EED89A" opacity="0.35"/>
+</svg>

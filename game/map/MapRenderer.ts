@@ -51,11 +51,15 @@ export class MapRenderer {
     scene.load.svg("house",           "/sprites/house.svg");
     scene.load.svg("house-b",         "/sprites/house-b.svg");
     scene.load.svg("moxie-hq",        "/sprites/moxie-hq.svg");
+    scene.load.svg("moxie-truck",     "/sprites/moxie-truck.svg");
     scene.load.svg("tree-palo-verde", "/sprites/tree-palo-verde.svg");
     scene.load.svg("cactus",          "/sprites/cactus.svg");
     scene.load.svg("cactus-short",    "/sprites/cactus-short.svg");
     scene.load.svg("rock-pile",       "/sprites/rock-pile.svg");
     scene.load.svg("bush",            "/sprites/bush.svg");
+    scene.load.svg("ground-tile-1",   "/sprites/ground-tile-1.svg", { width: 64, height: 32 });
+    scene.load.svg("ground-tile-2",   "/sprites/ground-tile-2.svg", { width: 64, height: 32 });
+    scene.load.svg("ground-tile-3",   "/sprites/ground-tile-3.svg", { width: 64, height: 32 });
   }
 
   create(): void {
@@ -64,10 +68,12 @@ export class MapRenderer {
   }
 
   private drawGroundTiles(): void {
-    const g = this.scene.add.graphics();
-    g.setDepth(10);
     const tw2 = TILE_WIDTH  / 2; // 32
     const th2 = TILE_HEIGHT / 2; // 16
+
+    // Park region uses Graphics (green, no SVG variant needed)
+    const park = this.scene.add.graphics();
+    park.setDepth(10);
 
     for (let gx = 0; gx < GRID_SIZE; gx++) {
       for (let gy = 0; gy < GRID_SIZE; gy++) {
@@ -75,24 +81,28 @@ export class MapRenderer {
         const isPark = gx >= PARK.gxMin && gx <= PARK.gxMax
                     && gy >= PARK.gyMin && gy <= PARK.gyMax;
 
-        const fillColor  = isPark ? 0x88B860 : 0xDEB882;
-        const lineColor  = isPark ? 0x70A050 : 0xC9A86B;
-
-        g.fillStyle(fillColor, 1);
-        g.fillPoints([
-          { x,          y           },
-          { x: x + tw2, y: y + th2  },
-          { x,          y: y + TILE_HEIGHT },
-          { x: x - tw2, y: y + th2  },
-        ], true);
-
-        g.lineStyle(0.5, lineColor, 0.3);
-        g.strokePoints([
-          { x,          y           },
-          { x: x + tw2, y: y + th2  },
-          { x,          y: y + TILE_HEIGHT },
-          { x: x - tw2, y: y + th2  },
-        ], true);
+        if (isPark) {
+          park.fillStyle(0x88B860, 1);
+          park.fillPoints([
+            { x,          y           },
+            { x: x + tw2, y: y + th2  },
+            { x,          y: y + TILE_HEIGHT },
+            { x: x - tw2, y: y + th2  },
+          ], true);
+          park.lineStyle(0.5, 0x70A050, 0.3);
+          park.strokePoints([
+            { x,          y           },
+            { x: x + tw2, y: y + th2  },
+            { x,          y: y + TILE_HEIGHT },
+            { x: x - tw2, y: y + th2  },
+          ], true);
+        } else {
+          // Sandy tiles use SVG sprites for visual variety
+          const v = (gx * 7 + gy * 13) % 100;
+          const key = v < 50 ? "ground-tile-1" : v < 80 ? "ground-tile-2" : "ground-tile-3";
+          // Origin (0.5, 0) places the SVG's top-center at the tile's top vertex
+          this.scene.add.image(x, y, key).setOrigin(0.5, 0).setDepth(10);
+        }
       }
     }
   }
@@ -105,6 +115,8 @@ export class MapRenderer {
     }
     this.placeSprite(HQ.key, HQ.gx, HQ.gy, 2);
     registerBlockedRect(HQ.gx, HQ.gy, 2, 2);
+    // Moxie truck parked adjacent to HQ (decorative, not blocked)
+    this.placeSprite("moxie-truck", 11, 4, 1);
 
     // 1x1 footprint objects
     // Trees: trunk tile blocked (canopy is walk-under)
