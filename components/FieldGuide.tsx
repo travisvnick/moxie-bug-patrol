@@ -380,7 +380,7 @@ export default function FieldGuide() {
               <img
                 src={`/sprites/${detail.key}.svg`}
                 alt={detail.name}
-                style={{ width: 96, height: 96, objectFit: "contain" }}
+                style={{ width: 112, height: 112, objectFit: "contain" }}
               />
             </div>
 

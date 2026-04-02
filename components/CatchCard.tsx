@@ -129,7 +129,7 @@ export default function CatchCard() {
           <img
             src={`/sprites/${card.spriteKey}.svg`}
             alt={card.name}
-            style={{ width: 64, height: 64, objectFit: "contain" }}
+            style={{ width: 96, height: 96, objectFit: "contain" }}
           />
         </div>
 

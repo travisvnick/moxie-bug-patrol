@@ -1,35 +1,68 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
-  <!-- Antennae -->
-  <path d="M18 10 Q13 5 9 2" stroke="#2C1810" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-  <path d="M30 10 Q35 5 39 2" stroke="#2C1810" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-  <!-- Legs left side (drawn before body so body covers base) -->
-  <line x1="15" y1="25" x2="4" y2="19" stroke="#2C1810" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="13" y1="30" x2="2" y2="30" stroke="#2C1810" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="15" y1="35" x2="5" y2="42" stroke="#2C1810" stroke-width="1.5" stroke-linecap="round"/>
-  <!-- Legs right side -->
-  <line x1="33" y1="25" x2="44" y2="19" stroke="#2C1810" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="35" y1="30" x2="46" y2="30" stroke="#2C1810" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="33" y1="35" x2="43" y2="42" stroke="#2C1810" stroke-width="1.5" stroke-linecap="round"/>
-  <!-- Body / elytra (wings) -->
-  <ellipse cx="24" cy="31" rx="12" ry="9" fill="#7B3E19"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Shadow -->
+  <ellipse cx="64" cy="120" rx="28" ry="7" fill="rgba(18,50,80,0.15)"/>
+
+  <!-- Back legs (drawn before body so body covers base) -->
+  <path d="M44,90 Q30,104 22,114" stroke="#5A3318" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <circle cx="21" cy="115" r="3.5" fill="#4A2A10"/>
+  <path d="M84,90 Q98,104 106,114" stroke="#5A3318" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <circle cx="107" cy="115" r="3.5" fill="#4A2A10"/>
+
+  <!-- Middle legs -->
+  <path d="M42,70 Q24,72 16,84" stroke="#5A3318" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <circle cx="15" cy="85" r="3.5" fill="#4A2A10"/>
+  <path d="M86,70 Q104,72 112,84" stroke="#5A3318" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <circle cx="113" cy="85" r="3.5" fill="#4A2A10"/>
+
+  <!-- Front legs (arm-like — confident strut pose) -->
+  <path d="M44,58 Q28,52 20,60" stroke="#5A3318" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <circle cx="19" cy="61" r="4" fill="#4A2A10"/>
+  <path d="M84,58 Q100,52 108,60" stroke="#5A3318" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <circle cx="109" cy="61" r="4" fill="#4A2A10"/>
+
+  <!-- Body / abdomen -->
+  <ellipse cx="64" cy="88" rx="24" ry="28" fill="#8B5E3C" stroke="#4A2A10" stroke-width="2.5"/>
+  <!-- Wing covers (elytra) — slight overlay -->
+  <ellipse cx="57" cy="86" rx="13" ry="25" fill="#A07548" opacity="0.60"/>
+  <ellipse cx="71" cy="86" rx="13" ry="25" fill="#A07548" opacity="0.60"/>
   <!-- Wing seam -->
-  <line x1="24" y1="22" x2="24" y2="40" stroke="#5A2D0C" stroke-width="0.8" opacity="0.7"/>
+  <line x1="64" y1="62" x2="64" y2="112" stroke="#5A3318" stroke-width="1.5" opacity="0.55"/>
   <!-- Body highlight -->
-  <ellipse cx="21" cy="27" rx="4" ry="2.5" fill="#9B5A2A" opacity="0.5"/>
-  <!-- Pronotum (shield) -->
-  <ellipse cx="24" cy="21" rx="10" ry="6" fill="#8B4A20"/>
+  <ellipse cx="57" cy="76" rx="6" ry="4" fill="#B8855A" opacity="0.4"/>
+
+  <!-- Thorax / pronotum shield -->
+  <ellipse cx="64" cy="60" rx="20" ry="13" fill="#9B6B45" stroke="#4A2A10" stroke-width="2.5"/>
+  <ellipse cx="59" cy="55" rx="5" ry="3" fill="#C49A70" opacity="0.35"/>
+
   <!-- Head -->
-  <ellipse cx="24" cy="13" rx="8" ry="6" fill="#9B5530"/>
-  <!-- Sunglasses - left lens -->
-  <rect x="14" y="10" width="8" height="6" rx="3" ry="3" fill="#111111"/>
-  <!-- Sunglasses - right lens -->
-  <rect x="26" y="10" width="8" height="6" rx="3" ry="3" fill="#111111"/>
-  <!-- Bridge between lenses -->
-  <rect x="22" y="12" width="4" height="1.5" rx="0.5" fill="#333333"/>
+  <ellipse cx="64" cy="42" rx="18" ry="14" fill="#A07548" stroke="#4A2A10" stroke-width="2.5"/>
+
+  <!-- Antennae -->
+  <path d="M54,31 Q44,18 34,8" stroke="#5A3318" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <circle cx="33" cy="7" r="4" fill="#7A4F2A"/>
+  <path d="M74,31 Q84,18 94,8" stroke="#5A3318" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <circle cx="95" cy="7" r="4" fill="#7A4F2A"/>
+
+  <!-- SUNGLASSES (the signature!) -->
+  <rect x="45" y="34" width="17" height="12" rx="3" fill="#1A1A1A"/>
+  <rect x="66" y="34" width="17" height="12" rx="3" fill="#1A1A1A"/>
+  <!-- Bridge -->
+  <rect x="62" y="39" width="4" height="2" rx="1" fill="#444"/>
   <!-- Temple arms -->
-  <line x1="14" y1="13" x2="10" y2="12" stroke="#333333" stroke-width="1.2" stroke-linecap="round"/>
-  <line x1="34" y1="13" x2="38" y2="12" stroke="#333333" stroke-width="1.2" stroke-linecap="round"/>
-  <!-- Lens shine (cool effect) -->
-  <ellipse cx="17.5" cy="11.5" rx="2" ry="1.2" fill="white" opacity="0.35"/>
-  <ellipse cx="29.5" cy="11.5" rx="2" ry="1.2" fill="white" opacity="0.35"/>
+  <line x1="45" y1="40" x2="38" y2="37" stroke="#444" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="83" y1="40" x2="90" y2="37" stroke="#444" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Lens shine -->
+  <rect x="48" y="36" width="5" height="3" rx="1.5" fill="white" opacity="0.35"/>
+  <rect x="69" y="36" width="5" height="3" rx="1.5" fill="white" opacity="0.35"/>
+
+  <!-- Smug smirk -->
+  <path d="M50,51 Q64,60 78,51" stroke="#4A2A10" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Cool tooth -->
+  <rect x="62" y="51" width="4" height="5" rx="1" fill="white"/>
+
+  <!-- Swagger lines -->
+  <line x1="16" y1="50" x2="6" y2="46" stroke="#0C77D8" stroke-width="1.5" opacity="0.4" stroke-linecap="round"/>
+  <line x1="13" y1="60" x2="3" y2="60" stroke="#0C77D8" stroke-width="1.5" opacity="0.4" stroke-linecap="round"/>
+  <line x1="112" y1="50" x2="122" y2="46" stroke="#0C77D8" stroke-width="1.5" opacity="0.4" stroke-linecap="round"/>
+  <line x1="115" y1="60" x2="125" y2="60" stroke="#0C77D8" stroke-width="1.5" opacity="0.4" stroke-linecap="round"/>
 </svg>
