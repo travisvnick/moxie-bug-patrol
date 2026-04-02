@@ -21,6 +21,10 @@ const PLAYER_SCREEN_SPEED = 160;
 //   West:  gx === 0, gy 8-12
 //   East:  gx === 19, gy 8-12
 
+// Walk animation: cycle frames at this interval
+const WALK_FRAME_INTERVAL = 0.15; // seconds per frame
+const PLAYER_WALK_KEYS = ["player-walk-1", "player-walk-2", "player-walk-3", "player-walk-2"];
+
 export default class PaloVerdeLane extends Phaser.Scene {
   private inputSystem!: InputSystem;
   private cameraSystem!: CameraSystem;
@@ -30,6 +34,9 @@ export default class PaloVerdeLane extends Phaser.Scene {
   private playerSprite!: Phaser.GameObjects.Image;
   private playerGX: number = PLAYER_START_X;
   private playerGY: number = PLAYER_START_Y;
+  private walkFrameTimer: number = 0;
+  private walkFrameIndex: number = 0;
+  private playerMoving: boolean = false;
 
   // Named handlers so we can remove them on shutdown
   private readonly onBugCaught       = () => { this.scene.pause(); };
@@ -44,7 +51,10 @@ export default class PaloVerdeLane extends Phaser.Scene {
     MapRenderer.preload(this);
     BorderRenderer.preload(this);
     SpawnSystem.preload(this);
-    this.load.svg("player", "/sprites/player.svg", { width: 48, height: 88 });
+    this.load.svg("player-idle", "/sprites/player-idle.svg", { width: 64, height: 88 });
+    this.load.svg("player-walk-1", "/sprites/player-walk-1.svg", { width: 64, height: 88 });
+    this.load.svg("player-walk-2", "/sprites/player-walk-2.svg", { width: 64, height: 88 });
+    this.load.svg("player-walk-3", "/sprites/player-walk-3.svg", { width: 64, height: 88 });
   }
 
   create(): void {
@@ -63,7 +73,10 @@ export default class PaloVerdeLane extends Phaser.Scene {
     // Player sprite — same placement convention as MapRenderer.placeSprite (1×1 footprint):
     // position = gridToScreen(gx+1, gy+1), origin = (0.5, 1) so feet land at tile front vertex.
     const { x, y } = gridToScreen(this.playerGX + 1, this.playerGY + 1);
-    this.playerSprite = this.add.image(x, y, "player");
+    this.playerSprite = this.add.image(x, y, "player-idle");
+    this.walkFrameTimer = 0;
+    this.walkFrameIndex = 0;
+    this.playerMoving = false;
     this.playerSprite.setOrigin(0.5, 1.0);
     this.playerSprite.setDepth(this.playerDepth());
 
@@ -142,7 +155,38 @@ export default class PaloVerdeLane extends Phaser.Scene {
       if (len > 0) { sdx /= len; sdy /= len; }
     }
 
-    if (sdx === 0 && sdy === 0) return;
+    if (sdx === 0 && sdy === 0) {
+      // Not moving — show idle frame
+      if (this.playerMoving) {
+        this.playerMoving = false;
+        this.walkFrameTimer = 0;
+        this.walkFrameIndex = 0;
+        this.playerSprite.setTexture("player-idle");
+      }
+      return;
+    }
+
+    // Player is moving — cycle walk frames
+    if (!this.playerMoving) {
+      this.playerMoving = true;
+      this.walkFrameTimer = 0;
+      this.walkFrameIndex = 0;
+      this.playerSprite.setTexture(PLAYER_WALK_KEYS[0]);
+    }
+    this.walkFrameTimer += dt;
+    if (this.walkFrameTimer >= WALK_FRAME_INTERVAL) {
+      this.walkFrameTimer -= WALK_FRAME_INTERVAL;
+      this.walkFrameIndex = (this.walkFrameIndex + 1) % PLAYER_WALK_KEYS.length;
+      this.playerSprite.setTexture(PLAYER_WALK_KEYS[this.walkFrameIndex]);
+    }
+
+    // Flip sprite based on screen-space X direction
+    // Default sprite faces left; flip when moving right
+    if (sdx > 0.1) {
+      this.playerSprite.setFlipX(true);
+    } else if (sdx < -0.1) {
+      this.playerSprite.setFlipX(false);
+    }
 
     // Scale to screen speed, then convert to grid velocity via inverse Jacobian of gridToScreen.
     // gridToScreen: sx=(gx-gy)*32, sy=(gx+gy)*16  →  J⁻¹ = 1/1024 * [16 32; -16 32]

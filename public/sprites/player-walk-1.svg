@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 88" width="64" height="88">
+  <!-- === WALK 1 v7 — Right leg forward, left back === -->
+
+  <!-- Bug net -->
+  <line x1="40" y1="50" x2="50" y2="14" stroke="#8B6B3E" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="50" cy="10" rx="8" ry="6.5" fill="none" stroke="#0C77D8" stroke-width="2.5"/>
+  <path d="M42,10 Q44,20 50,26 Q56,20 58,10" fill="none" stroke="white" stroke-width="0.9" opacity="0.55"/>
+  <path d="M43,6 Q45,18 50,24 Q55,18 57,6" fill="none" stroke="white" stroke-width="0.8" opacity="0.5"/>
+  <path d="M46,4 Q48,16 50,22 Q52,16 54,4" fill="none" stroke="white" stroke-width="0.7" opacity="0.45"/>
+  <path d="M50,3.5 L50,20" stroke="white" stroke-width="0.6" opacity="0.4"/>
+  <path d="M43,8 Q50,10 57,8" fill="none" stroke="white" stroke-width="0.6" opacity="0.4"/>
+  <path d="M42,12 Q50,15 58,12" fill="none" stroke="white" stroke-width="0.6" opacity="0.4"/>
+  <path d="M44,17 Q50,19.5 56,17" fill="none" stroke="white" stroke-width="0.5" opacity="0.35"/>
+  <path d="M47,21 Q50,23 53,21" fill="none" stroke="white" stroke-width="0.5" opacity="0.3"/>
+
+  <!-- FAR LEG (left — angled back) -->
+  <line x1="25" y1="64" x2="18" y2="79" stroke="#123250" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M15,79 L21,79 C22,79 22,81 21,81 L14,81 C13,81 13,79 15,79 Z" fill="#111"/>
+
+  <!-- FAR ARM (left — swung forward) -->
+  <line x1="20" y1="42" x2="12" y2="54" stroke="#123250" stroke-width="2" stroke-linecap="round"/>
+  <path d="M10,53.5 C10,52.5 11,52 12.5,52.5 C13.5,53 14,54 13,55 C12,55.5 10.5,55 10,53.5 Z" fill="#F0BA8C"/>
+
+  <!-- BODY -->
+  <path d="M22,36 C19,37 18,42 18,50 C18,57 20,62 23,64 L35,64 C38,62 40,57 40,50 C40,42 39,37 36,36 Z" fill="#7BB8E0" stroke="#123250" stroke-width="2"/>
+  <path d="M18,50 C18,42 19,37 22,36 L24,36 L23,64 C20,62 18,57 18,50 Z" fill="#5a9cc8" opacity="0.35"/>
+  <path d="M40,50 C40,42 39,37 36,36 L34,36 L35,64 C38,62 40,57 40,50 Z" fill="#5a9cc8" opacity="0.35"/>
+  <rect x="21" y="41" width="5" height="2.8" rx="0.7" fill="white" opacity="0.7"/>
+  <path d="M22.3,43 C22.3,42.2 22.7,42 23,42.5 C23.3,42 23.7,42.2 23.7,43" fill="none" stroke="#0C77D8" stroke-width="0.5" stroke-linecap="round"/>
+
+  <!-- NEAR LEG (right — angled forward) -->
+  <line x1="33" y1="64" x2="40" y2="78" stroke="#123250" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M37,78 L43,78 C44,78 44,80 43,80 L36,80 C35,80 35,78 37,78 Z" fill="#111"/>
+
+  <!-- NEAR ARM (right — holds net) -->
+  <line x1="38" y1="42" x2="40" y2="50" stroke="#123250" stroke-width="2" stroke-linecap="round"/>
+  <path d="M39,49.5 C39,48.5 40,48 41.5,48.5 C42.5,49 43,50 42,51 C41,51.5 39.5,51 39,49.5 Z" fill="#F0BA8C"/>
+
+  <!-- HEAD -->
+  <ellipse cx="29" cy="20" rx="16" ry="16" fill="#F0BA8C" stroke="#123250" stroke-width="2.5"/>
+  <ellipse cx="29" cy="22" rx="12" ry="12" fill="#FADED0"/>
+
+  <!-- CAP -->
+  <path d="M13,18 C13,4 21,0 29,0 C37,0 45,4 45,18 Z" fill="#1a2a40" stroke="#123250" stroke-width="2"/>
+  <path d="M10,17 C16,15.5 25,14.5 34,15 C40,15.5 47,16.5 48,18 C43,19 33,19.5 23,19 C15,18.5 11,18 10,17 Z" fill="#1a2a40" stroke="#123250" stroke-width="1.2"/>
+
+  <path d="M29,5.5 L33,9.5 L29,13.5 L25,9.5 Z" fill="#0C77D8"/>
+  <path d="M27.5,10.5 C27.5,9 28.2,8.5 29,9.8 C29.8,8.5 30.5,9 30.5,10.5" fill="none" stroke="white" stroke-width="1.3" stroke-linecap="round"/>
+
+  <circle cx="23" cy="23" r="2" fill="#111"/>
+  <circle cx="35" cy="22.5" r="2" fill="#111"/>
+  <circle cx="24" cy="22.2" r="0.7" fill="white"/>
+  <circle cx="36" cy="21.7" r="0.7" fill="white"/>
+  <circle cx="29" cy="27" r="1.2" fill="#d4967a"/>
+  <path d="M26,30 Q29,32.5 32,30" stroke="#c48060" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+</svg>
