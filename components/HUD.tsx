@@ -21,6 +21,13 @@ export default function HUD() {
     return () => eventBus.off("bugCaught", handler);
   }, []);
 
+  // Reset count when progress is cleared
+  useEffect(() => {
+    const handler = () => setBugsCaught(0);
+    eventBus.on("resetProgress", handler);
+    return () => eventBus.off("resetProgress", handler);
+  }, []);
+
   // Fade hint after HINT_FADE_MS
   useEffect(() => {
     const fadeTimer = setTimeout(() => setHintFading(true), HINT_FADE_MS);
